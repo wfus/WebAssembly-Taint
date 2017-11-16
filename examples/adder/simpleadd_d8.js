@@ -1,12 +1,3 @@
-var fs = require('fs');
-
-/* Loads the WebAssembly from file if running on server */
-async function createWebAssembly(path, importObject) {
-	const bytes = fs.readFileSync(path);
-	console.log(bytes);
-	console.log(new Uint8Array(bytes));
-	return WebAssembly.instantiate(bytes, importObject);
-}
 
 /* Loads the WebAssembly from file if running on browser */
 /*
@@ -30,18 +21,35 @@ const env = {
 const importObject = {env};
 
 
+const bytes = new Uint8Array(
+	[0,97,115,109,1,0,0,0,0,6,100,121,108,105,110,
+	107,128,128,192,2,0,1,19,4,96,2,127,127,1,127,
+	96,1,127,1,127,96,0,1,127,96,0,0,2,65,4,3,101,
+	110,118,109,101,109,111,114,121,66,97,115,101,
+	3,127,0,3,101,110,118,6,109,101,109,111,114,121,
+	2,0,128,2,3,101,110,118,5,116,97,98,108,101,1,
+	112,0,0,3,101,110,118,116,97,98,108,101,66,97,
+	115,101,3,127,0,3,7,6,0,1,0,2,3,3,6,2,127,1,65,
+	0,127,1,65,0,7,92,6,95,115,105,109,112,108,101,
+	109,105,110,117,115,0,2,114,117,110,80,111,115,
+	116,83,101,116,115,0,4,95,115,105,109,112,108,
+	101,99,111,110,115,116,0,3,18,95,95,112,111,115,
+	116,95,105,110,115,116,97,110,116,105,97,116,101,
+	0,5,95,115,105,109,112,108,101,97,100,100,0,0,
+	95,115,105,109,112,108,101,105,110,99,0,1,1,0,
+	54,6,7,0,1,0,106,7,0,0,65,1,106,7,0,0,1,107,5,
+	0,65,168,1,3,0,1,18,0,35,0,36,2,35,2,65,128,128,
+	192,2,106,36,3,16,4,4]
+);
+
+console.log(bytes);
+
 /* Load in our wasm file and try to activate functions */
-createWebAssembly('simpleadd.wasm', importObject).then(wa => {
+WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	console.log("Got the exports", exports);
 	console.log("1 plus 1 = ");
 	console.log(exports._simpleadd(2, 3));
 	console.log(exports._simpleinc(419));
 }).catch(err => console.log('Error loading WASM', err));
-
-
-
-console.log("Got down here!\n");
-
-
 
