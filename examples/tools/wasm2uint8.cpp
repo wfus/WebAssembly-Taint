@@ -4,19 +4,23 @@
 #include <cstring>
 
 #define DEFAULT_BUF_SZ 256
-
-
+#define INTS_IN_LINE 20
 
 
 /* Read file in binary, outputting a Uint8 for each byte */
 void print_wasm_hex(char* fname) {
+	int counter = 0;
 	std::cout << "[";
 	std::ifstream infile;
 	infile.open(fname, std::ios::binary);
 	while(infile) {
 		unsigned char b;
-		infile >> b;
+		infile >> std::noskipws >>  b;
 		printf("%x,", b);
+		counter++;
+		if (counter % INTS_IN_LINE == 0) {
+			std::cout << std::endl;
+		}
 	}
 	std::cout << "]" << std::endl << std::endl;
 }
@@ -25,14 +29,19 @@ void print_wasm_hex(char* fname) {
 
 /* Read file in binary, outputting a Uint8 for each byte */
 void print_wasm_uint(char* fname) {
+	int counter = 0;
 	std::cout << "[";
 	
 	std::ifstream infile;
 	infile.open(fname, std::ios::binary);
 	while(infile) {
 		unsigned char b;
-		infile >> b;
+		infile >> std::noskipws >> b;
 		printf("%u,", b);
+		counter++;
+		if (counter % INTS_IN_LINE == 0) {
+			std::cout << std::endl;
+		}
 	}
 	std::cout << "]" << std::endl << std::endl;
 }

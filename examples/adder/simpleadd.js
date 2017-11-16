@@ -5,7 +5,7 @@ async function createWebAssembly(path, importObject) {
 	const bytes = fs.readFileSync(path);
 	console.log(bytes);
 	console.log(new Uint8Array(bytes));
-	return WebAssembly.instantiate(bytes, importObject);
+	return WebAssembly.instantiate(new Uint8Array(bytes), importObject);
 }
 
 /* Loads the WebAssembly from file if running on browser */
