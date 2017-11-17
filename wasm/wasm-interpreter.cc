@@ -31,6 +31,7 @@
 #include <fstream>
 
 #define WFU_DEBUGGING_DIR "/home/wfu/webasm/wasm.log"
+#define STRING(s) #s
 
 namespace v8 {
 namespace internal {
@@ -2086,6 +2087,14 @@ class ThreadImpl {
     auto result = lval.to<ctype>() op rval.to<ctype>();     \
     possible_nondeterminism_ |= has_nondeterminism(result); \
     Push(WasmValue(result));                                \
+    std::ofstream logger;                                               \
+    logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);      \
+    logger << "Operation: " << lval.to<ctype>() << " ";\
+    logger << STRING(op) << " ";\
+    logger << rval.to<ctype>() << " --> ";\
+    logger << result << " " << STRING(ctype);\
+    logger << " " << STRING(name) << std::endl;\
+    logger.close();\
     break;                                                  \
   }
           FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
