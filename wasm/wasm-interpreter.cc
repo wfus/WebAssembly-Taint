@@ -37,6 +37,49 @@ namespace v8 {
 namespace internal {
 namespace wasm {
 
+/*
+static void print_bytes_of_object(std::ofstream* log, const void *object, size_t size) {
+  const unsigned char * const bytes = static_cast<const unsigned char *>(object);
+  size_t i;
+  char buf[16];
+  (*log) << "[";
+  for (i = 0; i < size; i++) {
+    sprintf(buf, "%.2X", bytes[i]);
+    (*log) << buf;
+    if (i != size - 1) (*log) << " ";
+  }
+  (*log) << "]";
+}
+*/
+
+static void print_bytes_of_object(std::ofstream* log, WasmValue *wasm, 
+  const char *wtype) {
+  char buf[16];
+  sprintf(
+    buf, 
+    "[ %lx | %.2X ]",
+    wasm->to<uint64_t>(), 
+    wasm->getTaint()
+  );
+  (*log) << buf;
+}
+
+static void log_binop(WasmValue l, WasmValue r, WasmValue res, 
+               const char* wtype, const char* wop) { 
+  std::ofstream logger;                          
+  logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);  
+  logger <<"["<<wop<<" "<<wtype<<"]: ";
+  print_bytes_of_object(&logger, &l, wtype);
+  logger << " ";
+  print_bytes_of_object(&logger, &r, wtype);
+  logger << " ==> ";
+  print_bytes_of_object(&logger, &res, wtype);
+  logger << std::endl;
+  logger.close();
+}
+
+
+
 #if DEBUG
 #define TRACE(...)                                        \
   do {                                                    \
@@ -2086,16 +2129,10 @@ class ThreadImpl {
     WasmValue lval = Pop();                                 \
     auto result = lval.to<ctype>() op rval.to<ctype>();     \
     possible_nondeterminism_ |= has_nondeterminism(result); \
-    Push(WasmValue(result));                                \
-    std::ofstream logger;                                               \
-    logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);      \
-    logger << "Operation: " << lval.to<ctype>() << " ";\
-    logger << STRING(op) << " ";\
-    logger << rval.to<ctype>() << " --> ";\
-    logger << result << " " << STRING(ctype);\
-    logger << " " << STRING(name) << std::endl;\
-    logger.close();\
-    break;                                                  \
+    WasmValue res = WasmValue(result); \
+    log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
+    Push(res);                                \
+    break;                                                      \
   }
           FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
 #undef EXECUTE_SIMPLE_BINOP

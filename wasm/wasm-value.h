@@ -13,6 +13,12 @@ namespace v8 {
 namespace internal {
 namespace wasm {
 
+
+/* Attempt at creating a custom type
+ * that replaces int32_t
+ * in order to get the taint
+ */
+
 // Macro for defining WasmValue methods for different types.
 // Elements:
 // - name (for to_<name>() method)
@@ -63,9 +69,18 @@ class WasmValue {
   template <typename T>
   inline T to_unchecked() const;
 
+  char getTaint() {
+    return taint;
+  }
+
+  void setTaint(char enteredTaint) {
+    taint = enteredTaint;
+  }
+
  private:
   ValueType type_;
   uint64_t bit_pattern_;
+  char taint = '\0';
 };
 
 #define DECLARE_CAST(name, localtype, ctype, ...) \
