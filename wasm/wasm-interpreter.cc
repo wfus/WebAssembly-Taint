@@ -2123,16 +2123,26 @@ class ThreadImpl {
           break;
         }
 
-#define EXECUTE_SIMPLE_BINOP(name, ctype, op)               \
-  case kExpr##name: {                                       \
-    WasmValue rval = Pop();                                 \
-    WasmValue lval = Pop();                                 \
-    auto result = lval.to<ctype>() op rval.to<ctype>();     \
-    possible_nondeterminism_ |= has_nondeterminism(result); \
-    WasmValue res = WasmValue(result); \
+#define EXECUTE_SIMPLE_BINOP(name, ctype, op)                \
+  case kExpr##name: {                                        \
+    WasmValue rval = Pop();                                  \
+    WasmValue lval = Pop();                                  \
+    auto result = lval.to<ctype>() op rval.to<ctype>();      \
+    possible_nondeterminism_ |= has_nondeterminism(result);  \
+    WasmValue res = WasmValue(result);                       \
+    /* Do not need to set taint for comparator binops... */  \
+    if (STRING(op) == "*" ||                                 \
+        STRING(op) == "/" ||                                 \
+        STRING(op) == "-" ||                                 \
+        STRING(op) == "+" ||                                 \
+        STRING(op) == "^" ||                                 \
+        STRING(op) == "|" ||                                 \
+        STRING(op) == "&") {                                 \
+      res.setTaint(rval.getTaint() | lval.getTaint());       \
+    }                                                        \
     log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
-    Push(res);                                \
-    break;                                                      \
+    Push(res);                                               \
+    break;                                                   \
   }
           FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
 #undef EXECUTE_SIMPLE_BINOP
@@ -2893,3 +2903,4 @@ WasmInterpreter::HeapObjectsScope::~HeapObjectsScope() {
 }  // namespace wasm
 }  // namespace internal
 }  // namespace v8
+ 
