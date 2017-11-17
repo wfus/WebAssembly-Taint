@@ -1093,8 +1093,17 @@ class CodeMap {
   }
 };
 
+
+/* PUT LOGGING HERE, THIS LOOKS LIKE RETURN VALUE BOYS! */
+/* NVM AFTER CHECKING IT LOOKS LIKE IT ISNT :( */
 Handle<Object> WasmValueToNumber(Factory* factory, WasmValue val,
                                  wasm::ValueType type) {
+  std::ofstream logger;                          
+  logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+  logger << "RET: ";
+  print_bytes_of_object(&logger, &val, "ret value");
+  logger << std::endl;
+  logger.close();
   switch (type) {
     case kWasmI32:
       return factory->NewNumberFromInt(val.to<int32_t>());
@@ -1459,14 +1468,25 @@ class ThreadImpl {
 
   bool DoReturn(Decoder* decoder, InterpreterCode** code, pc_t* pc, pc_t* limit,
                 size_t arity) {
+
     DCHECK_GT(frames_.size(), 0);
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
+
+    std::ofstream outfile;
+    outfile.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+    outfile << "RETURN TRAP: ";
+    
+
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
       state_ = WasmInterpreter::FINISHED;
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
+      
+      print_bytes_of_object(&outfile, sp_dest, "RET");
+      outfile << std::endl;
+      outfile.close();
       return false;
     } else {
       // Return to caller frame.
@@ -1478,6 +1498,12 @@ class ThreadImpl {
       TRACE("  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
+      
+      char buf[64];
+      sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
+            (*code)->function->func_index, *pc);
+      outfile << buf << std::endl;
+      outfile.close();
       return true;
     }
   }
