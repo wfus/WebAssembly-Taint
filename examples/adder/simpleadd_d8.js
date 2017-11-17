@@ -11,8 +11,8 @@ async function createWebAssembly(path, importObject) {
 const memory = new WebAssembly.Memory({initial:256, maximum:256});
 const env = {
 	'abortStackOverflow': _ => {throw new Error('overflow');},
-	'table': new WebAssembly.Table({initial: 0, maximum: 0, element: 'anyfunc'}),
-	'tableBase': 0,
+	'table': new WebAssembly.Table({initial: 0, maximum: 0, element: 'anyfunc'}),          
+	'tableBase': 0,  
 	'memory': memory,
 	'memoryBase': 1024,
 	'STACKTOP': 0, 
@@ -53,5 +53,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print("1 plus 1 = ");
 	print(exports._simpleadd(2, 3));
 	print(exports._simpleinc(419));
+	quit()
 }).catch(err => print('Error loading WASM', err));
+
 

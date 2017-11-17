@@ -24,6 +24,13 @@
 #include "src/wasm/wasm-objects-inl.h"
 #include "src/wasm/wasm-result.h"
 
+/* WFU's EDITS FOR DEBUGGING */
+#include <iostream>
+#include <fstream>
+
+#define WFU_DEBUGGING_DIR "/home/wfu/webasm/wasm.log"
+
+
 using v8::internal::wasm::ErrorThrower;
 
 namespace v8 {
@@ -980,6 +987,12 @@ void WasmJs::Install(Isolate* isolate, bool exposed_on_global_object) {
       isolate->native_context()->wasm_runtime_error_function());
   JSObject::AddProperty(webassembly, isolate->factory()->RuntimeError_string(),
                         runtime_error, attributes);
+
+  // WFU Test to see if we even get here...
+    std::ofstream outfile;
+    outfile.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+    outfile << "Constructing the WASM Class..." << std::endl;
+    outfile.close();
 }
 
 #undef ASSIGN

@@ -26,6 +26,12 @@
 #include "src/zone/accounting-allocator.h"
 #include "src/zone/zone-containers.h"
 
+/* WFU's EDITS FOR DEBUGGING */
+#include <iostream>
+#include <fstream>
+
+#define WFU_DEBUGGING_DIR "/home/wfu/webasm/wasm.log"
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -2144,6 +2150,13 @@ class ThreadImpl {
   WasmValue Pop() {
     DCHECK_GT(frames_.size(), 0);
     DCHECK_GT(StackHeight(), frames_.back().llimit());  // can't pop into locals
+    
+    uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
+    std::ofstream outfile;
+    outfile.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+    outfile << "Popped: " << peek  << std::endl;
+    outfile.close();
+    
     return *--sp_;
   }
 
