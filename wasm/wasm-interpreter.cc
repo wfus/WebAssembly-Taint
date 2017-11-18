@@ -1258,7 +1258,19 @@ class ThreadImpl {
     return static_cast<int>(frames_.size());
   }
 
+
+  /* Does a RETURN to main JS engine. Transfers control over to 
+   * wasm-debug.cc:200, so refer there to handle the return value
+   * along with the taint. Since stack_start_ is a WasmValue*
+   * we can still access the taint.
+   */
   WasmValue GetReturnValue(uint32_t index) {
+
+    // std::ofstream logger;
+    // logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+    // logger << "EHHHHHHHH, GOOD MORNING" << std::endl;
+    // logger.close();
+
     if (state_ == WasmInterpreter::TRAPPED) return WasmValue(0xdeadbeef);
     DCHECK_EQ(WasmInterpreter::FINISHED, state_);
     Activation act = current_activation();
@@ -1710,6 +1722,19 @@ class ThreadImpl {
     return HandleException(isolate) == WasmInterpreter::Thread::HANDLED;
   }
 
+
+
+
+
+
+
+
+
+  /* WFU EDIT AREA!!!!!!  USING SOME SKETCHY EDITS AS AN EASY WAY TO GET TAINT
+   *  INSIDE THE SYSTEM. 
+   *     TODO: Add a new parser for a kExprTaint or something
+   *     so you can add taint in the natural way. 
+   */
   void Execute(InterpreterCode* code, pc_t pc, int max) {
     DCHECK_NOT_NULL(code->side_table);
     DCHECK(!frames_.empty());
