@@ -262,7 +262,7 @@ class InterpreterHandle {
     /* WFUEDIT: TODO(fix segfault) */                                      \
     /* WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>());  */  \
     /* NOT WORKING: WriteUnalignedValue<WasmValue>(arg_buffer, ret_val); */ \
-    WriteUnalignedValue<ctype>(arg_buffer, ret_val.getTaint()); \
+    WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>()); \
     break;
       switch (sig->GetReturn(0)) {
         CASE_RET_TYPE(kWasmI32, uint32_t)
