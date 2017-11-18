@@ -182,20 +182,18 @@ class InterpreterHandle {
     for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
 
-/*
-#define CASE_ARG_TYPE(type, ctype)                                    \
-  case type:                                                          \
-    DCHECK_EQ(param_size, sizeof(ctype));                             \
-    argi = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr) % (1 << (sizeof(ctype)*8 -8)));  \
-    argi.setTaint(static_cast<char>((ReadUnalignedValue<ctype>(arg_buf_ptr) >> (sizeof(ctype)*8 - 8)) & 0xff)); \
-    wasm_args[i] = argi;                                                \
-    break; */
-
 #define CASE_ARG_TYPE(type, ctype)                                    \
   case type:                                                          \
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
-    break;
+    break; 
+      /*
+      if (sig->GetParam(i) == kWasmI32) {
+          uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr); 
+          WasmValue arg = WasmValue(rawarg & 0x00ffffff);
+          arg.setTaint(static_cast<char> ((rawarg >> 24) & 0xff));
+          wasm_args[i] = arg;
+      }*/
 
       switch (sig->GetParam(i)) {
         CASE_ARG_TYPE(kWasmI32, uint32_t)

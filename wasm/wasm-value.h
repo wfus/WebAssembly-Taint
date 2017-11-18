@@ -57,13 +57,6 @@ class WasmValue {
 #undef DEFINE_TYPE_SPECIFIC_METHODS
 
 
-
-
-  #define DEFINE_TYPE_SPECIFIC_METHODS_T(name, localtype, ctype, v_to_p, p_to_v) \
-  explicit WasmValue(ctype v, char t) : type_(localtype), bit_pattern_(v_to_p) {taint=t}\
-  FOREACH_WASMVAL_TYPE(DEFINE_TYPE_SPECIFIC_METHODS_T)
-#undef DEFINE_TYPE_SPECIFIC_METHODS
-
   ValueType type() const { return type_; }
 
   // Checks equality of type and bit pattern (also for float and double values).
