@@ -51,7 +51,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	print("Got the exports");
 	print("1 plus 1 = ");
-	print(exports._simpleadd(2, 3));
+	print(exports._simpleadd(2342342423, 3));
 	print(exports._simpleinc(419));
 	quit()
 }).catch(err => print('Error loading WASM', err));

@@ -187,16 +187,19 @@ class InterpreterHandle {
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break; 
-      /*
+      
+
       if (sig->GetParam(i) == kWasmI32) {
           uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr); 
           WasmValue arg = WasmValue(rawarg & 0x00ffffff);
-          arg.setTaint(static_cast<char> ((rawarg >> 24) & 0xff));
+          char taint = (char) ((rawarg >> 24) & 0xff);
+          arg.setTaint(taint);
           wasm_args[i] = arg;
-      }*/
+      }
 
       switch (sig->GetParam(i)) {
-        CASE_ARG_TYPE(kWasmI32, uint32_t)
+        //CASE_ARG_TYPE(kWasmI32, uint32_t)
+        case kWasmI32: break;
         CASE_ARG_TYPE(kWasmI64, uint64_t)
         CASE_ARG_TYPE(kWasmF32, float)
         CASE_ARG_TYPE(kWasmF64, double)
