@@ -19,6 +19,10 @@
 #include "src/wasm/wasm-objects.h"
 #include "src/wasm/wasm-opcodes.h"
 
+#define WFU_DEBUGGING_DIR "/home/wfu/webasm/wasm.log"
+#include <iostream>
+#include <fstream>
+
 namespace v8 {
 namespace internal {
 
@@ -255,8 +259,13 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     frame_pointer = it.frame()->fp();
   }
 
+  std::ofstream logger;
+  logger.open(WFU_DEBUGGING_DIR, std::ios::app | std::ios::out);
+  logger << "WASM Interpreter Started" << std::endl;
   bool success = instance->debug_info()->RunInterpreter(frame_pointer,
                                                         func_index, arg_buffer);
+  logger << "WASM Interpreter Ended: Returned " << success << std::endl;
+  logger.close();
 
   if (!success) {
     DCHECK(isolate->has_pending_exception());

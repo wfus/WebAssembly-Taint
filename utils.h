@@ -22,6 +22,11 @@
 #include "src/vector.h"
 #include "src/zone/zone.h"
 
+
+#define WFU_DEBUGGING_DIR "/home/wfu/webasm/wasm.log"
+#include <iostream>
+#include <fstream>
+
 #if defined(V8_OS_AIX)
 #include <fenv.h>  // NOLINT(build/c++11)
 #endif
@@ -1573,6 +1578,14 @@ static inline V ReadUnalignedValue(const void* p) {
 #endif  // V8_TARGET_ARCH_MIPS || V8_TARGET_ARCH_MIPS64 || V8_TARGET_ARCH_ARM
 }
 
+
+template <typename V>
+static inline void WriteUnalignedValueTaint(void* p, V value) {
+  *(reinterpret_cast<V*>(p)) = value;
+}
+
+
+/* WFUNOTE: we don't use MIPS or MIPS64 or ARCH_ARM... */
 template <typename V>
 static inline void WriteUnalignedValue(void* p, V value) {
 #if !(V8_TARGET_ARCH_MIPS || V8_TARGET_ARCH_MIPS64 || V8_TARGET_ARCH_ARM)

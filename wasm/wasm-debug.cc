@@ -163,6 +163,13 @@ class InterpreterHandle {
   // Returns true if exited regularly, false if a trap/exception occurred and
   // was not handled inside this activation. In the latter case, a pending
   // exception will have been set on the isolate.
+
+  /* TEMPORARY SOLUTION (WFUEDIT)
+   * ----------------------------
+   * We will just make the taint the top 1 byte of the whatever data type
+   * we recieve. Since i'm a fucking retard and don't know how to program
+   * in C++ or any language other than NAND++
+   */
   bool Execute(Handle<WasmInstanceObject> instance_object,
                Address frame_pointer, uint32_t func_index,
                uint8_t* arg_buffer) {
@@ -174,13 +181,25 @@ class InterpreterHandle {
     uint8_t* arg_buf_ptr = arg_buffer;
     for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
+
 #define CASE_ARG_TYPE(type, ctype)                                    \
   case type:                                                          \
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
-    break;
+    break; 
+      
+
+      if (sig->GetParam(i) == kWasmI32) {
+          uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr); 
+          WasmValue arg = WasmValue(rawarg & 0x00ffffff);
+          char taint = (char) ((rawarg >> 24) & 0xff);
+          arg.setTaint(taint);
+          wasm_args[i] = arg;
+      }
+
       switch (sig->GetParam(i)) {
-        CASE_ARG_TYPE(kWasmI32, uint32_t)
+        //CASE_ARG_TYPE(kWasmI32, uint32_t)
+        case kWasmI32: break;
         CASE_ARG_TYPE(kWasmI64, uint64_t)
         CASE_ARG_TYPE(kWasmF32, float)
         CASE_ARG_TYPE(kWasmF64, double)
@@ -241,7 +260,10 @@ class InterpreterHandle {
 #define CASE_RET_TYPE(type, ctype)                                       \
   case type:                                                             \
     DCHECK_EQ(1 << ElementSizeLog2Of(sig->GetReturn(0)), sizeof(ctype)); \
-    WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>());         \
+    /* WFUEDIT: TODO(fix segfault) */                                      \
+    /* WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>());  */  \
+    /* NOT WORKING: WriteUnalignedValue<WasmValue>(arg_buffer, ret_val); */ \
+    WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>()); \
     break;
       switch (sig->GetReturn(0)) {
         CASE_RET_TYPE(kWasmI32, uint32_t)

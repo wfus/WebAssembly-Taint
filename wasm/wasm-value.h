@@ -56,6 +56,7 @@ class WasmValue {
   FOREACH_WASMVAL_TYPE(DEFINE_TYPE_SPECIFIC_METHODS)
 #undef DEFINE_TYPE_SPECIFIC_METHODS
 
+
   ValueType type() const { return type_; }
 
   // Checks equality of type and bit pattern (also for float and double values).
