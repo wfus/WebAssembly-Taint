@@ -2218,13 +2218,13 @@ class ThreadImpl {
 #define EXECUTE_OTHER_UNOP(name, ctype)                     \
   case kExpr##name: {                                       \
     TrapReason trap = kTrapCount;                           \
-    WasmValue val = Pop().to<ctype>();                      \
+    WasmValue val = Pop();                                  \
     auto result = Execute##name(val.to<ctype>(), &trap);    \
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
     WasmValue res = WasmValue(result);                      \
     res.setTaint(val.getTaint());                           \
-    log_binop(val, res, STRING(ctype), STRING(name));       \
+    log_binop(val, val, res, STRING(ctype), STRING(name));  \
     Push(res);                                              \
     break;                                                  \
   }
