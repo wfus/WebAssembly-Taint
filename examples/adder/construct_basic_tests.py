@@ -1,4 +1,5 @@
 import re
+import random
 
 uint32_t = "uint32_t"
 uint64_t = "uint64_t"
@@ -7,12 +8,30 @@ int64_t = "int64_t"
 float = "float"
 double = "double"
 
+function_prefix = "test"
+
 
 def binop_to_cpp(binop_triple):
 	name, ctype, op = binop_triple
 	func = ""
-	func += "{} test_{}({} a, {} b}) {".format(ctype, name, ctype, ctype)
-	func += ""
+	func += "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
+	func += "\t return a {} b;\n".format(op)
+	func += "}\n"
+	func += "\n"
+	func += "\n"
+	return func
+
+
+def binop_to_javascript(binop_lst):
+	teststr = ""
+	INT_MAX = (1 << 31) - 1
+	for name, _, _ in binop_lst:
+		rand1 = random.randint(0, INT_MAX)
+		rand2 = random.randint(0, INT_MAX)
+		teststr += "exports._{}_{}".format(function_prefix, name)
+		teststr += "({}, {});\n".format(rand1, rand2)
+	return teststr
+
 
 
 simple_binop_list = [
@@ -25,9 +44,9 @@ simple_binop_list = [
     ("I32Eq", uint32_t, "=="),
     ("I32Ne", uint32_t, "!="),
     ("I32LtU", uint32_t, "<"),
-    ("I32LeU", uint32_t, "<="),       
+    ("I32LeU", uint32_t, "<="),
     ("I32GtU", uint32_t, ">"),
-    ("I32GeU", uint32_t, ">="),       
+    ("I32GeU", uint32_t, ">="),
     ("I32LtS", int32_t, "<") ,
     ("I32LeS", int32_t, "<="),
     ("I32GtS", int32_t, ">") ,
@@ -41,9 +60,9 @@ simple_binop_list = [
     ("I64Eq", uint64_t, "=="),
     ("I64Ne", uint64_t, "!="),
     ("I64LtU", uint64_t, "<"),
-    ("I64LeU", uint64_t, "<="),       
+    ("I64LeU", uint64_t, "<="),
     ("I64GtU", uint64_t, ">"),
-    ("I64GeU", uint64_t, ">="),       
+    ("I64GeU", uint64_t, ">="),
     ("I64LtS", int64_t, "<") ,
     ("I64LeS", int64_t, "<="),
     ("I64GtS", int64_t, ">") ,
@@ -71,142 +90,93 @@ simple_binop_list = [
 ]
 
 
+other_binop_list = [
+    ("I32DivS", int32_t),
+    ("I32DivU", uint32_t),
+    ("I32RemS", int32_t),
+    ("I32RemU", uint32_t),
+    ("I32Shl", uint32_t),
+    ("I32ShrU", uint32_t),
+    ("I32ShrS", int32_t),
+    ("I64DivS", int64_t),
+    ("I64DivU", uint64_t),
+    ("I64RemS", int64_t),
+    ("I64RemU", uint64_t),
+    ("I64Shl", uint64_t),
+    ("I64ShrU", uint64_t),
+    ("I64ShrS", int64_t),
+    ("I32Ror", int32_t),
+    ("I32Rol", int32_t),
+    ("I64Ror", int64_t),
+    ("I64Rol", int64_t),
+    ("F32Min", float),
+    ("F32Max", float),
+    ("F64Min", double),
+    ("F64Max", double),
+    ("I32AsmjsDivS", int32_t),
+    ("I32AsmjsDivU", uint32_t),
+    ("I32AsmjsRemS", int32_t),
+    ("I32AsmjsRemU", uint32_t),
+    #("F32CopySign", Float32),
+    #("F64CopySign", Float64)
+]
 
-"""
-#define FOREACH_SIMPLE_BINOP(V) \
-  V(I32Add, uint32_t, +)        \
-  V(I32Sub, uint32_t, -)        \
-  V(I32Mul, uint32_t, *)        \
-  V(I32And, uint32_t, &)        \
-  V(I32Ior, uint32_t, |)        \
-  V(I32Xor, uint32_t, ^)        \
-  V(I32Eq, uint32_t, ==)        \
-  V(I32Ne, uint32_t, !=)        \
-  V(I32LtU, uint32_t, <)        \
-  V(I32LeU, uint32_t, <=)       \
-  V(I32GtU, uint32_t, >)        \
-  V(I32GeU, uint32_t, >=)       \
-  V(I32LtS, int32_t, <)         \
-  V(I32LeS, int32_t, <=)        \
-  V(I32GtS, int32_t, >)         \
-  V(I32GeS, int32_t, >=)        \
-  V(I64Add, uint64_t, +)        \
-  V(I64Sub, uint64_t, -)        \
-  V(I64Mul, uint64_t, *)        \
-  V(I64And, uint64_t, &)        \
-  V(I64Ior, uint64_t, |)        \
-  V(I64Xor, uint64_t, ^)        \
-  V(I64Eq, uint64_t, ==)        \
-  V(I64Ne, uint64_t, !=)        \
-  V(I64LtU, uint64_t, <)        \
-  V(I64LeU, uint64_t, <=)       \
-  V(I64GtU, uint64_t, >)        \
-  V(I64GeU, uint64_t, >=)       \
-  V(I64LtS, int64_t, <)         \
-  V(I64LeS, int64_t, <=)        \
-  V(I64GtS, int64_t, >)         \
-  V(I64GeS, int64_t, >=)        \
-  V(F32Add, float, +)           \
-  V(F32Sub, float, -)           \
-  V(F32Eq, float, ==)           \
-  V(F32Ne, float, !=)           \
-  V(F32Lt, float, <)            \
-  V(F32Le, float, <=)           \
-  V(F32Gt, float, >)            \
-  V(F32Ge, float, >=)           \
-  V(F64Add, double, +)          \
-  V(F64Sub, double, -)          \
-  V(F64Eq, double, ==)          \
-  V(F64Ne, double, !=)          \
-  V(F64Lt, double, <)           \
-  V(F64Le, double, <=)          \
-  V(F64Gt, double, >)           \
-  V(F64Ge, double, >=)          \
-  V(F32Mul, float, *)           \
-  V(F64Mul, double, *)          \
-  V(F32Div, float, /)           \
-  V(F64Div, double, /)
-
-#define FOREACH_OTHER_BINOP(V) \
-  V(I32DivS, int32_t)          \
-  V(I32DivU, uint32_t)         \
-  V(I32RemS, int32_t)          \
-  V(I32RemU, uint32_t)         \
-  V(I32Shl, uint32_t)          \
-  V(I32ShrU, uint32_t)         \
-  V(I32ShrS, int32_t)          \
-  V(I64DivS, int64_t)          \
-  V(I64DivU, uint64_t)         \
-  V(I64RemS, int64_t)          \
-  V(I64RemU, uint64_t)         \
-  V(I64Shl, uint64_t)          \
-  V(I64ShrU, uint64_t)         \
-  V(I64ShrS, int64_t)          \
-  V(I32Ror, int32_t)           \
-  V(I32Rol, int32_t)           \
-  V(I64Ror, int64_t)           \
-  V(I64Rol, int64_t)           \
-  V(F32Min, float)             \
-  V(F32Max, float)             \
-  V(F64Min, double)            \
-  V(F64Max, double)            \
-  V(I32AsmjsDivS, int32_t)     \
-  V(I32AsmjsDivU, uint32_t)    \
-  V(I32AsmjsRemS, int32_t)     \
-  V(I32AsmjsRemU, uint32_t)    \
-  V(F32CopySign, Float32)      \
-  V(F64CopySign, Float64)
-
-#define FOREACH_OTHER_UNOP(V)    \
-  V(I32Clz, uint32_t)            \
-  V(I32Ctz, uint32_t)            \
-  V(I32Popcnt, uint32_t)         \
-  V(I32Eqz, uint32_t)            \
-  V(I64Clz, uint64_t)            \
-  V(I64Ctz, uint64_t)            \
-  V(I64Popcnt, uint64_t)         \
-  V(I64Eqz, uint64_t)            \
-  V(F32Abs, Float32)             \
-  V(F32Neg, Float32)             \
-  V(F32Ceil, float)              \
-  V(F32Floor, float)             \
-  V(F32Trunc, float)             \
-  V(F32NearestInt, float)        \
-  V(F64Abs, Float64)             \
-  V(F64Neg, Float64)             \
-  V(F64Ceil, double)             \
-  V(F64Floor, double)            \
-  V(F64Trunc, double)            \
-  V(F64NearestInt, double)       \
-  V(I32SConvertF32, float)       \
-  V(I32SConvertF64, double)      \
-  V(I32UConvertF32, float)       \
-  V(I32UConvertF64, double)      \
-  V(I32ConvertI64, int64_t)      \
-  V(I64SConvertF32, float)       \
-  V(I64SConvertF64, double)      \
-  V(I64UConvertF32, float)       \
-  V(I64UConvertF64, double)      \
-  V(I64SConvertI32, int32_t)     \
-  V(I64UConvertI32, uint32_t)    \
-  V(F32SConvertI32, int32_t)     \
-  V(F32UConvertI32, uint32_t)    \
-  V(F32SConvertI64, int64_t)     \
-  V(F32UConvertI64, uint64_t)    \
-  V(F32ConvertF64, double)       \
-  V(F32ReinterpretI32, int32_t)  \
-  V(F64SConvertI32, int32_t)     \
-  V(F64UConvertI32, uint32_t)    \
-  V(F64SConvertI64, int64_t)     \
-  V(F64UConvertI64, uint64_t)    \
-  V(F64ConvertF32, float)        \
-  V(F64ReinterpretI64, int64_t)  \
-  V(I32AsmjsSConvertF32, float)  \
-  V(I32AsmjsUConvertF32, float)  \
-  V(I32AsmjsSConvertF64, double) \
-  V(I32AsmjsUConvertF64, double) \
-  V(F32Sqrt, float)              \
-  V(F64Sqrt, double)"""
-
+other_unop_list = [
+    ("I32Clz", uint32_t),
+    ("I32Ctz", uint32_t),
+    ("I32Popcnt", uint32_t),
+    ("I32Eqz", uint32_t),
+    ("I64Clz", uint64_t),
+    ("I64Ctz", uint64_t),
+    ("I64Popcnt", uint64_t),
+    ("I64Eqz", uint64_t),
+    #("F32Abs", Float32),
+    #("F32Neg", Float32),
+    ("F32Ceil", float),
+    ("F32Floor", float),
+    ("F32Trunc", float),
+    ("F32NearestInt", float),
+    #("F64Abs", Float64),
+    #("F64Neg", Float64),
+    ("F64Ceil", double),
+    ("F64Floor", double),
+    ("F64Trunc", double),
+    ("F64NearestInt", double),
+    ("I32SConvertF32", float),
+    ("I32SConvertF64", double),
+    ("I32UConvertF32", float),
+    ("I32UConvertF64", double),
+    ("I32ConvertI64", int64_t),
+    ("I64SConvertF32", float),
+    ("I64SConvertF64", double),
+    ("I64UConvertF32", float),
+    ("I64UConvertF64", double),
+    ("I64SConvertI32", int32_t),
+    ("I64UConvertI32", uint32_t),
+    ("F32SConvertI32", int32_t),
+    ("F32UConvertI32", uint32_t),
+    ("F32SConvertI64", int64_t),
+    ("F32UConvertI64", uint64_t),
+    ("F32ConvertF64", double),
+    ("F32ReinterpretI32", int32_t),
+    ("F64SConvertI32", int32_t),
+    ("F64UConvertI32", uint32_t),
+    ("F64SConvertI64", int64_t),
+    ("F64UConvertI64", uint64_t),
+    ("F64ConvertF32", float),
+    ("F64ReinterpretI64", int64_t),
+    ("I32AsmjsSConvertF32", float),
+    ("I32AsmjsUConvertF32", float),
+    ("I32AsmjsSConvertF64", double),
+    ("I32AsmjsUConvertF64", double),
+    ("F32Sqrt", float),
+    ("F64Sqrt", double)
+]
 
 if __name__ == "__main__":
+	prog = ""
+	for binop in simple_binop_list:
+		prog += binop_to_cpp(binop)
+	print(prog)
+
+	print(binop_to_javascript(simple_binop_list))
