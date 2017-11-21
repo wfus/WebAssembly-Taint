@@ -1,60 +1,73 @@
 import re
 
+uint32_t = "uint32_t"
+uint64_t = "uint64_t"
+int32_t = "int32_t"
+int64_t = "int64_t"
+float = "float"
+double = "double"
 
 
-Simple_Binops = [
-    (I32Add, uint32_t, "+"),
-    (I32Sub, uint32_t, "-"),
-    (I32Mul, uint32_t, "*"),
-    (I32And, uint32_t, "&"),
-    (I32Ior, uint32_t, "|"),
-    (I32Xor, uint32_t, "^"),
-    (I32Eq, uint32_t, "=="),
-    (I32Ne, uint32_t, "!="),
-    (I32LtU, uint32_t, "<"),
-    (I32LeU, uint32_t, "<="),       
-    (I32GtU, uint32_t, ">"),
-    (I32GeU, uint32_t, ">="),       
-    (I32LtS, int32_t, "<") ,
-    (I32LeS, int32_t, "<="),
-    (I32GtS, int32_t, ">") ,
-    (I32GeS, int32_t, ">="),
-    (I64Add, uint64_t, "+"),
-    (I64Sub, uint64_t, "-"),
-    (I64Mul, uint64_t, "*"),
-    (I64And, uint64_t, "&"),
-    (I64Ior, uint64_t, "|"),
-    (I64Xor, uint64_t, "^"),
-    (I64Eq, uint64_t, "=="),
-    (I64Ne, uint64_t, "!="),
-    (I64LtU, uint64_t, "<"),
-    (I64LeU, uint64_t, "<="),       
-    (I64GtU, uint64_t, ">"),
-    (I64GeU, uint64_t, ">="),       
-    (I64LtS, int64_t, "<") ,
-    (I64LeS, int64_t, "<="),
-    (I64GtS, int64_t, ">") ,
-    (I64GeS, int64_t, ">="),
-    (F32Add, float, "+")   ,
-    (F32Sub, float, "-")   ,
-    (F32Eq, float, "==")   ,
-    (F32Ne, float, "!=")   ,
-    (F32Lt, float, "<")    ,
-    (F32Le, float, "<=")   ,
-    (F32Gt, float, ">")    ,
-    (F32Ge, float, ">=")   ,
-    (F64Add, double, "+")  ,
-    (F64Sub, double, "-")  ,
-    (F64Eq, double, "==")  ,
-    (F64Ne, double, "!=")  ,
-    (F64Lt, double, "<")   ,
-    (F64Le, double, "<=")  ,
-    (F64Gt, double, ">")   ,
-    (F64Ge, double, ">=")  ,
-    (F32Mul, float, "*")   ,
-    (F64Mul, double, "*")  ,
-    (F32Div, float, "/")   ,
-    (F64Div, double, "/")
+def binop_to_cpp(binop_triple):
+	name, ctype, op = binop_triple
+	func = ""
+	func += "{} test_{}({} a, {} b}) {".format(ctype, name, ctype, ctype)
+	func += ""
+
+
+simple_binop_list = [
+    ("I32Add", uint32_t, "+"),
+    ("I32Sub", uint32_t, "-"),
+    ("I32Mul", uint32_t, "*"),
+    ("I32And", uint32_t, "&"),
+    ("I32Ior", uint32_t, "|"),
+    ("I32Xor", uint32_t, "^"),
+    ("I32Eq", uint32_t, "=="),
+    ("I32Ne", uint32_t, "!="),
+    ("I32LtU", uint32_t, "<"),
+    ("I32LeU", uint32_t, "<="),       
+    ("I32GtU", uint32_t, ">"),
+    ("I32GeU", uint32_t, ">="),       
+    ("I32LtS", int32_t, "<") ,
+    ("I32LeS", int32_t, "<="),
+    ("I32GtS", int32_t, ">") ,
+    ("I32GeS", int32_t, ">="),
+    ("I64Add", uint64_t, "+"),
+    ("I64Sub", uint64_t, "-"),
+    ("I64Mul", uint64_t, "*"),
+    ("I64And", uint64_t, "&"),
+    ("I64Ior", uint64_t, "|"),
+    ("I64Xor", uint64_t, "^"),
+    ("I64Eq", uint64_t, "=="),
+    ("I64Ne", uint64_t, "!="),
+    ("I64LtU", uint64_t, "<"),
+    ("I64LeU", uint64_t, "<="),       
+    ("I64GtU", uint64_t, ">"),
+    ("I64GeU", uint64_t, ">="),       
+    ("I64LtS", int64_t, "<") ,
+    ("I64LeS", int64_t, "<="),
+    ("I64GtS", int64_t, ">") ,
+    ("I64GeS", int64_t, ">="),
+    ("F32Add", float, "+")   ,
+    ("F32Sub", float, "-")   ,
+    ("F32Eq", float, "==")   ,
+    ("F32Ne", float, "!=")   ,
+    ("F32Lt", float, "<")    ,
+    ("F32Le", float, "<=")   ,
+    ("F32Gt", float, ">")    ,
+    ("F32Ge", float, ">=")   ,
+    ("F64Add", double, "+")  ,
+    ("F64Sub", double, "-")  ,
+    ("F64Eq", double, "==")  ,
+    ("F64Ne", double, "!=")  ,
+    ("F64Lt", double, "<")   ,
+    ("F64Le", double, "<=")  ,
+    ("F64Gt", double, ">")   ,
+    ("F64Ge", double, ">=")  ,
+    ("F32Mul", float, "*")   ,
+    ("F64Mul", double, "*")  ,
+    ("F32Div", float, "/")   ,
+    ("F64Div", double, "/")
 ]
 
 
@@ -194,3 +207,6 @@ Simple_Binops = [
   V(I32AsmjsUConvertF64, double) \
   V(F32Sqrt, float)              \
   V(F64Sqrt, double)"""
+
+
+if __name__ == "__main__":
