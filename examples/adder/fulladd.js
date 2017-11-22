@@ -33,6 +33,7 @@ const importObject = {env};
 /* Load in our wasm file and try to activate functions */
 createWebAssembly('fulladd.wasm', importObject).then(wa => {
 	const exports = wa.instance.exports;
+	print(exports);
 	exports._test_I32Add(1281388364, 515037763);
 	exports._test_I32Sub(803299690, 1328775078);
 	exports._test_I32Mul(1673495688, 1942486985);
