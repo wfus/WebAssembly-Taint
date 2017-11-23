@@ -254,7 +254,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     DCHECK_EQ(StackFrame::WASM_INTERPRETER_ENTRY, it.frame()->type());
     frame_pointer = it.frame()->fp();
   }
-
+  // DEBUGCOMMENT
   bool success = instance->debug_info()->RunInterpreter(frame_pointer,
                                                         func_index, arg_buffer);
 

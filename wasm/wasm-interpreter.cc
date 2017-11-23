@@ -26,10 +26,68 @@
 #include "src/zone/accounting-allocator.h"
 #include "src/zone/zone-containers.h"
 
+#include <iostream>
+#include <fstream>
+
+#define TAINT_EMAIL     0x1
+#define TAINT_CCINFO    0x2
+#define TAINT_PASSWORD  0x4
+#define TAINT_SWAP      0x8
+#define TAINT_TEMP      0x10
+#define TAINT_DRUGS     0x20
+#define TAINT_MEDICAL   0x40
+#define TAINT_OTHER     0x80
+
+#define DEBUGGING_DIR "/tmp/wasm.log"
+#define STRING(s) #s
+
+
 namespace v8 {
 namespace internal {
 namespace wasm {
 
+    static void print_bytes_of_object(WasmValue *wasm, const char *wtype) {
+        char buf[32];
+        sprintf(buf, "[ %llx | %.2X ]", wasm->to<uint64_t>(), wasm->getTaint());
+        std::ofstream logger;
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
+        logger << buf << std::endl;
+        logger.close();
+    }
+    
+    static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
+        std::ofstream logger;
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
+        logger <<"["<<wop<<" "<<wtype<<"]: ";
+        print_bytes_of_object(&l, wtype);
+        logger << " ";
+        print_bytes_of_object(&r, wtype);
+        logger << " ==> ";
+        print_bytes_of_object(&res, wtype);
+        logger << std::endl;
+        logger.close();
+    }
+    
+    /*
+    static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
+        std::ofstream logger;
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
+        logger <<"["<<wop<<" "<<wtype<<"]: ";
+        print_bytes_of_object(&v, wtype);
+        logger << " ==> ";
+        print_bytes_of_object(&res, wtype);
+        logger << std::endl;
+        logger.close();
+    }
+    */
+    
+    static void log_string(const char* str) {
+        std::ofstream logger;
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
+        logger << str;
+        logger.close();
+    }
+    
 #if DEBUG
 #define TRACE(...)                                        \
   do {                                                    \
@@ -1043,6 +1101,7 @@ class CodeMap {
   }
 };
 
+// DEBUGCOMMENT
 Handle<Object> WasmValueToNumber(Factory* factory, WasmValue val,
                                  wasm::ValueType type) {
   switch (type) {
@@ -1412,11 +1471,17 @@ class ThreadImpl {
     DCHECK_GT(frames_.size(), 0);
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
+      
+    log_string("RETURN TRAP: ");
+    
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
       state_ = WasmInterpreter::FINISHED;
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
+      
+      print_bytes_of_object(sp_dest, "RET");
+      
       return false;
     } else {
       // Return to caller frame.
@@ -1428,6 +1493,11 @@ class ThreadImpl {
       TRACE("  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
+        
+      char buf[64];
+      sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
+              (*code)->function->func_index, *pc);
+        log_string(buf);
       return true;
     }
   }
@@ -2073,16 +2143,27 @@ class ThreadImpl {
           break;
         }
 
-#define EXECUTE_SIMPLE_BINOP(name, ctype, op)               \
-  case kExpr##name: {                                       \
-    WasmValue rval = Pop();                                 \
-    WasmValue lval = Pop();                                 \
-    auto result = lval.to<ctype>() op rval.to<ctype>();     \
-    possible_nondeterminism_ |= has_nondeterminism(result); \
-    Push(WasmValue(result));                                \
-    break;                                                  \
-  }
-          FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
+#define EXECUTE_SIMPLE_BINOP(name, ctype, op)                \
+  case kExpr##name: {                                        \
+    WasmValue rval = Pop();                                  \
+    WasmValue lval = Pop();                                  \
+    auto result = lval.to<ctype>() op rval.to<ctype>();      \
+    possible_nondeterminism_ |= has_nondeterminism(result);  \
+    WasmValue res = WasmValue(result);                       \
+    if (STRING(op) == "*" ||                                 \
+        STRING(op) == "/" ||                                 \
+        STRING(op) == "-" ||                                 \
+        STRING(op) == "+" ||                                 \
+        STRING(op) == "^" ||                                 \
+        STRING(op) == "|" ||                                 \
+        STRING(op) == "&") {                                 \
+      res.setTaint(rval.getTaint() | lval.getTaint());       \
+    }                                                        \
+    log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
+    Push(res);                                               \
+    break;                                                   \
+}
+              FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
 #undef EXECUTE_SIMPLE_BINOP
 
 #define EXECUTE_OTHER_BINOP(name, ctype)                    \

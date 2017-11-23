@@ -163,6 +163,11 @@ class InterpreterHandle {
   // Returns true if exited regularly, false if a trap/exception occurred and
   // was not handled inside this activation. In the latter case, a pending
   // exception will have been set on the isolate.
+    
+  /* TEMPORARY SOLUTION (WFUEDIT)
+   * We will just make the taint the top 1 byte of the whatever data type
+   * we recieve.
+   */
   bool Execute(Handle<WasmInstanceObject> instance_object,
                Address frame_pointer, uint32_t func_index,
                uint8_t* arg_buffer) {
@@ -179,8 +184,18 @@ class InterpreterHandle {
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
+        
+      if (sig->GetParam(i) == kWasmI32) {
+          uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr);
+          WasmValue arg = WasmValue(rawarg);
+          char taint = (char) ((rawarg >> 24) & 0xff);
+          arg.setTaint(taint);
+          wasm_args[i] = arg;
+      }
+        
       switch (sig->GetParam(i)) {
-        CASE_ARG_TYPE(kWasmI32, uint32_t)
+        // CASE_ARG_TYPE(kWasmI32, uint32_t)
+        case kWasmI32: break;
         CASE_ARG_TYPE(kWasmI64, uint64_t)
         CASE_ARG_TYPE(kWasmF32, float)
         CASE_ARG_TYPE(kWasmF64, double)
