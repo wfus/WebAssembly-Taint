@@ -1,4 +1,0 @@
-#!/bin/sh
-
-emcc simpleadd.c -Os -s WASM=1 -s SIDE_MODULE=1 -o simpleadd.wasm
-em++ fulladd.c   -Os -s WASM=1 -s SIDE_MODULE=1 --std=c++14 -o fulladd.wasm
