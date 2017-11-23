@@ -9,7 +9,7 @@ float = "float"
 double = "double"
 
 function_prefix = "test"
-
+print_prefix = "console.log("
 
 def binop_to_cpp(binop_triple):
 	name, ctype, op = binop_triple
@@ -26,10 +26,10 @@ def binop_to_javascript(binop_lst):
 	teststr = ""
 	INT_MAX = (1 << 31) - 1
 	for name, _, _ in binop_lst:
-		rand1 = random.randint(0, INT_MAX)
-		rand2 = random.randint(0, INT_MAX)
-		teststr += "exports._{}_{}".format(function_prefix, name)
-		teststr += "({}, {});\n".format(rand1, rand2)
+		rand1 = random.randint(1, 10)
+		rand2 = random.randint(1, 10)
+		teststr += "{}exports.{}_{}".format(print_prefix, function_prefix, name)
+		teststr += "({}, {}));\n".format(rand1, rand2)
 	return teststr
 
 
