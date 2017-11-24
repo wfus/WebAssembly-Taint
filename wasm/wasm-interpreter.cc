@@ -48,22 +48,34 @@ namespace wasm {
 
     static void print_bytes_of_object(WasmValue *wasm, const char *wtype) {
         char buf[32];
-        sprintf(buf, "[ %llx | %.2X ]", wasm->to<uint64_t>(), wasm->getTaint());
+        sprintf(buf, "[ %x | %.2X ]", wasm->to<uint32_t>(), wasm->getTaint());
         std::ofstream logger;
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << buf << std::endl;
+        logger << buf;
         logger.close();
     }
     
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
         std::ofstream logger;
+        
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger <<"["<<wop<<" "<<wtype<<"]: ";
+        logger.close();
+        
         print_bytes_of_object(&l, wtype);
+        
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << " ";
+        logger.close();
+        
         print_bytes_of_object(&r, wtype);
+        
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << " ==> ";
+        logger.close();
+        
         print_bytes_of_object(&res, wtype);
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << std::endl;
         logger.close();
     }
@@ -74,8 +86,10 @@ namespace wasm {
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger <<"["<<wop<<" "<<wtype<<"]: ";
         print_bytes_of_object(&v, wtype);
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << " ==> ";
         print_bytes_of_object(&res, wtype);
+        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << std::endl;
         logger.close();
     }
@@ -1481,7 +1495,8 @@ class ThreadImpl {
       TRACE("  => finish\n");
       
       print_bytes_of_object(sp_dest, "RET");
-      
+      log_string("\n");
+    
       return false;
     } else {
       // Return to caller frame.
@@ -1497,7 +1512,7 @@ class ThreadImpl {
       char buf[64];
       sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
               (*code)->function->func_index, *pc);
-        log_string(buf);
+      log_string(buf);
       return true;
     }
   }
@@ -2225,6 +2240,10 @@ class ThreadImpl {
   WasmValue Pop() {
     DCHECK_GT(frames_.size(), 0);
     DCHECK_GT(StackHeight(), frames_.back().llimit());  // can't pop into locals
+    uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
+    char buf[32];
+    sprintf(buf, "Popped: %x\n", peek);
+    log_string(buf);
     return *--sp_;
   }
 
@@ -2245,6 +2264,9 @@ class ThreadImpl {
   void Push(WasmValue val) {
     DCHECK_NE(kWasmStmt, val.type());
     DCHECK_LE(1, stack_limit_ - sp_);
+    char buf[32];
+    sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
+    log_string(buf);
     *sp_++ = val;
   }
 

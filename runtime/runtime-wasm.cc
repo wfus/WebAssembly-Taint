@@ -236,7 +236,6 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
   CHECK(!arg_buffer_obj->IsHeapObject());
   CHECK(arg_buffer_obj->IsSmi());
   uint8_t* arg_buffer = reinterpret_cast<uint8_t*>(*arg_buffer_obj);
-
   ClearThreadInWasmScope wasm_flag(true);
 
   // Set the current isolate's context.
