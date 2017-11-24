@@ -177,6 +177,11 @@ class InterpreterHandle {
     int num_params = static_cast<int>(sig->parameter_count());
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
+      printf("Num params: %i\n", num_params);
+      for (int i = 0; i < num_params * 16; i++) {
+          printf("%.2X\t", arg_buf_ptr[i]);
+      }
+      printf("\n");
     for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
 #define CASE_ARG_TYPE(type, ctype)                                    \
@@ -184,10 +189,10 @@ class InterpreterHandle {
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
-        
+      printf("Param: %x\n", ReadUnalignedValue<uint32_t>(arg_buf_ptr));
       if (sig->GetParam(i) == kWasmI32) {
           uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr);
-          WasmValue arg = WasmValue(rawarg);
+          WasmValue arg = WasmValue(rawarg & 0x00ffffff);
           char taint = (char) ((rawarg >> 24) & 0xff);
           arg.setTaint(taint);
           wasm_args[i] = arg;

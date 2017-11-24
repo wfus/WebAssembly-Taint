@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd ../../../
+ninja -C out.gn/x64.release -j4

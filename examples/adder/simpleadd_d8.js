@@ -51,10 +51,10 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	// var taint1 = 3 << 24;
 	// var taint2 = 4 << 24;	
-	var taint1 = 1;
-	var taint2 = 2;
-	print(exports._simpleadd(1 + taint1, 3 + taint2));
-	print(exports._simpleinc(419));
+	var taint1 = 1 << 24;
+	var taint2 = 2 << 24;
+	print(exports._simpleadd(4 + taint1, 5 + taint2, 10, 10, 10, 10, 10));
+	print(exports._simpleinc(419, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12));
 	quit()
 }).catch(err => print('Error loading WASM', err));
 print("Reached end of file");
