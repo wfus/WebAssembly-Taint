@@ -85,6 +85,8 @@ WasmGraphBuilder::WasmGraphBuilder(
       runtime_exception_support_(exception_support),
       sig_(sig),
       source_position_table_(source_position_table) {
+          // DEBUGCOMMENT
+       
   for (size_t i = sig->parameter_count(); i > 0 && !has_simd_; --i) {
     if (sig->GetParam(i - 1) == wasm::kWasmS128) has_simd_ = true;
   }
@@ -3057,12 +3059,14 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
   *effect_ = start;
   *control_ = start;
 
+  // DEBUGCOMMENT
+   
   // Compute size for the argument buffer.
   int args_size_bytes = 0;
   for (wasm::ValueType type : sig_->parameters()) {
     args_size_bytes += 1 << ElementSizeLog2Of(type);
   }
-
+    
   // The return value is also passed via this buffer:
   DCHECK_GE(wasm::kV8MaxWasmFunctionReturns, sig_->return_count());
   // TODO(wasm): Handle multi-value returns.
