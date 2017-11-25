@@ -115,7 +115,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	// var taint1 = 3 << 24;
 	// var taint2 = 4 << 24;	
-	print(exports);
+	// print(exports);
 	print(exports.test_I32Add(7, 5));
 	print(exports.test_I32Sub(9, 8));
 	print(exports.test_I32Mul(10, 7));
@@ -132,7 +132,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print(exports.test_I32LeS(5, 4));
 	print(exports.test_I32GtS(5, 4));
 	print(exports.test_I32GeS(5, 2));
-	print(exports.test_I64Add(5, 5));
+/*	print(exports.test_I64Add(5, 5));
 	print(exports.test_I64Sub(2, 3));
 	print(exports.test_I64Mul(4, 6));
 	print(exports.test_I64And(5, 4));
@@ -147,7 +147,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print(exports.test_I64LtS(4, 10));
 	print(exports.test_I64LeS(9, 10));
 	print(exports.test_I64GtS(2, 1));
-	print(exports.test_I64GeS(5, 10));
+	print(exports.test_I64GeS(5, 10)); */
 	print(exports.test_F32Add(8, 6));
 	print(exports.test_F32Sub(4, 7));
 	print(exports.test_F32Eq(5, 6));
@@ -167,7 +167,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print(exports.test_F32Mul(6, 5));
 	print(exports.test_F64Mul(4, 8));
 	print(exports.test_F32Div(2, 4));
-	print(exports.test_F64Div(10, 6));
+	print(exports.test_F64Div(10, 6, 10, 10, 10, 10, 10, 10, 10, 10, 10));
 	quit()
 }).catch(err => print('Error loading WASM', err));
 print("Reached end of file");

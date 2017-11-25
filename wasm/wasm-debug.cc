@@ -178,7 +178,7 @@ class InterpreterHandle {
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
       printf("Num params: %i\n", num_params);
-      for (int i = 0; i < 512; i++) {
+      for (int i = 0; i < 256; i++) {
           if (i % 4 == 0){
               printf("\n");
               printf("%p:\t", &arg_buf_ptr[i]);

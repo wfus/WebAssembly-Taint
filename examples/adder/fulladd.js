@@ -50,7 +50,7 @@ createWebAssembly('fulladd.wasm', importObject).then(wa => {
 	console.log(exports.test_I32LeS(5, 4));
 	console.log(exports.test_I32GtS(5, 4));
 	console.log(exports.test_I32GeS(5, 2));
-	console.log(exports.test_I64Add(5, 5));
+/*	console.log(exports.test_I64Add(5, 5));
 	console.log(exports.test_I64Sub(2, 3));
 	console.log(exports.test_I64Mul(4, 6));
 	console.log(exports.test_I64And(5, 4));
@@ -65,7 +65,7 @@ createWebAssembly('fulladd.wasm', importObject).then(wa => {
 	console.log(exports.test_I64LtS(4, 10));
 	console.log(exports.test_I64LeS(9, 10));
 	console.log(exports.test_I64GtS(2, 1));
-	console.log(exports.test_I64GeS(5, 10));
+	console.log(exports.test_I64GeS(5, 10)); */
 	console.log(exports.test_F32Add(8, 6));
 	console.log(exports.test_F32Sub(4, 7));
 	console.log(exports.test_F32Eq(5, 6));
