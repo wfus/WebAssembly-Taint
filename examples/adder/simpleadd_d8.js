@@ -53,7 +53,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	// var taint2 = 4 << 24;	
 	var taint1 = 1 << 40;
 	var taint2 = 2 << 40;
-	print(exports._simpleadd(4 + taint1, 5 + taint2, 10, 10, 10, 10, 10));
+//	print(exports._simpleadd(4 + taint1, 5 + taint2, 10, 10, 10, 10, 10));
 	print(exports._simpleinc(419, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12));
 	quit()
 }).catch(err => print('Error loading WASM', err));

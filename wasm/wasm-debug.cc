@@ -176,6 +176,8 @@ class InterpreterHandle {
     DCHECK_GE(kMaxInt, sig->parameter_count());
     int num_params = static_cast<int>(sig->parameter_count());
     ScopedVector<WasmValue> wasm_args(num_params);
+      //DEBUGCOMMENT
+      printf("Sig: %p\n", sig);
     uint8_t* arg_buf_ptr = arg_buffer;
       printf("Num params: %i\n", num_params);
       for (int i = 0; i < 256; i++) {

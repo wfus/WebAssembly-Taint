@@ -1,6 +1,6 @@
 #!/bin/sh
 
-D8BIN=" ../../../out.gn/x64.optdebug/d8 ";
+D8BIN=" ../../../out.gn/x64.release/d8 ";
 TESTFILE1=" ../adder/simpleadd_d8.js ";
 D8FLAGS=" --wasm_interpret_all
        --trace_wasm_interpreter 

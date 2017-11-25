@@ -86,7 +86,7 @@ WasmGraphBuilder::WasmGraphBuilder(
       sig_(sig),
       source_position_table_(source_position_table) {
           // DEBUGCOMMENT
-       
+          printf("WasmGraphBuidler: %p\n", sig_);
   for (size_t i = sig->parameter_count(); i > 0 && !has_simd_; --i) {
     if (sig->GetParam(i - 1) == wasm::kWasmS128) has_simd_ = true;
   }
@@ -3058,9 +3058,9 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
   Node* start = Start(param_count + 3);
   *effect_ = start;
   *control_ = start;
-
+  
   // DEBUGCOMMENT
-   
+    printf("Sig, wasm-compiler later: %p\n", sig_);
   // Compute size for the argument buffer.
   int args_size_bytes = 0;
   for (wasm::ValueType type : sig_->parameters()) {
@@ -4709,6 +4709,8 @@ WasmCompilationUnit::WasmCompilationUnit(
       runtime_exception_support_(exception_support),
       lower_simd_(lower_simd),
       mode_(mode) {
+          //DEBUGCOMMENT
+          printf("Paramct: %lu, %p\n", func_body_.sig->parameter_count(), func_body_.sig);
   switch (mode_) {
     case WasmCompilationUnit::CompilationMode::kLiftoff:
       new (&liftoff_) LiftoffData(isolate);

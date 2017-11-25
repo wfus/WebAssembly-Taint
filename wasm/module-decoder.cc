@@ -322,6 +322,7 @@ class ModuleDecoderImpl : public Decoder {
 
   void DecodeSection(SectionCode section_code, Vector<const uint8_t> bytes,
                      uint32_t offset, bool verify_functions = true) {
+      //DEBUGCOMMENT
     if (failed()) return;
     Reset(bytes, offset);
     TRACE("Section: %s\n", SectionName(section_code));
@@ -527,6 +528,7 @@ class ModuleDecoderImpl : public Decoder {
                                     false,       // imported
                                     false});     // exported
       WasmFunction* function = &module_->functions.back();
+    
       function->sig_index = consume_sig_index(module_.get(), &function->sig);
     }
   }
@@ -842,6 +844,8 @@ class ModuleDecoderImpl : public Decoder {
 
   // Decodes an entire module.
   ModuleResult DecodeModule(Isolate* isolate, bool verify_functions = true) {
+      //DEBUGCOMMENT
+      printf("DECODING MODULE\n");
     StartDecoding(isolate);
     uint32_t offset = 0;
     DecodeModuleHeader(Vector<const uint8_t>(start(), end() - start()), offset);
@@ -1333,6 +1337,9 @@ class ModuleDecoderImpl : public Decoder {
 ModuleResult DecodeWasmModule(Isolate* isolate, const byte* module_start,
                               const byte* module_end, bool verify_functions,
                               ModuleOrigin origin, Counters* counters) {
+    
+    //DEBUGCOMMENT
+    
   auto counter = origin == kWasmOrigin
                      ? counters->wasm_decode_wasm_module_time()
                      : counters->wasm_decode_asm_module_time();
@@ -1406,6 +1413,7 @@ bool ModuleDecoder::ok() { return impl_->ok(); }
 ModuleResult SyncDecodeWasmModule(Isolate* isolate, const byte* module_start,
                                   const byte* module_end, bool verify_functions,
                                   ModuleOrigin origin) {
+   //DEBUGCOMMENT
   return DecodeWasmModule(isolate, module_start, module_end, verify_functions,
                           origin, isolate->counters());
 }
