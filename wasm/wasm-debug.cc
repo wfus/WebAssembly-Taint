@@ -174,34 +174,27 @@ class InterpreterHandle {
     DCHECK_GE(module()->functions.size(), func_index);
     FunctionSig* sig = module()->functions[func_index].sig;
     DCHECK_GE(kMaxInt, sig->parameter_count());
-    int num_params = static_cast<int>(sig->parameter_count());
+    int num_params = static_cast<int>(sig->parameter_count()) / 2;
     ScopedVector<WasmValue> wasm_args(num_params);
-      //DEBUGCOMMENT
-      printf("Sig: %p\n", sig);
     uint8_t* arg_buf_ptr = arg_buffer;
-      printf("Num params: %i\n", num_params);
-      for (int i = 0; i < 256; i++) {
-          if (i % 4 == 0){
-              printf("\n");
-              printf("%p:\t", &arg_buf_ptr[i]);
-          }
-          printf("%.2X\t", arg_buf_ptr[i]);
-      }
-      printf("\n");
-    for (int i = 0; i < num_params; ++i) {
+    //DEBUGCOMMENT
+    for (int i = 0; i < 2 * num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
+      printf("Param: %x\n", ReadUnalignedValue<uint32_t>(arg_buf_ptr));
+      if (i >= num_params) {
+          uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
+          wasm_args[i - num_params].setTaint(taint);
+          continue;
+      }
 #define CASE_ARG_TYPE(type, ctype)                                    \
   case type:                                                          \
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
-      printf("Param: %x\n", ReadUnalignedValue<uint32_t>(arg_buf_ptr));
+      
       if (sig->GetParam(i) == kWasmI32) {
           uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr);
-          WasmValue arg = WasmValue(rawarg & 0x00ffffff);
-          char taint = (char) ((rawarg >> 24) & 0xff);
-          arg.setTaint(taint);
-          wasm_args[i] = arg;
+          wasm_args[i] = WasmValue(rawarg);
       }
         
       switch (sig->GetParam(i)) {
@@ -216,6 +209,7 @@ class InterpreterHandle {
       }
       arg_buf_ptr += param_size;
     }
+    printf("finished loop\n");
 
     uint32_t activation_id = StartActivation(frame_pointer);
 
