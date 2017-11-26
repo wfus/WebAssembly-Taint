@@ -25,3 +25,9 @@ int simpleconst() {
 	return 168;
 }
 
+int simplenest(int a, int b) {
+    int c = simpleinc(a);
+    int d = simpleinc(b);
+    return c * d;
+}
+
