@@ -11,16 +11,32 @@ double = "double"
 function_prefix = "test"
 print_prefix = "console.log("
 
-def binop_to_cpp(binop_triple):
+def simple_binop_to_cpp(binop_triple):
 	name, ctype, op = binop_triple
-	func = ""
-	func += "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
+	func = "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
 	func += "\t return a {} b;\n".format(op)
 	func += "}\n"
 	func += "\n"
 	func += "\n"
 	return func
 
+def other_binop_to_cpp(binop_triple):
+    name, ctype, op = binop_triple
+    func = "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
+    func += "\t return {}(a,b);\n".format(op)
+    func += "}\n"
+    func += "\n"
+    func += "\n"
+    return func
+
+def other_unop_to_cpp(binop_triple):
+    name, ctype, op = binop_triple
+    func = "{} {}_{}({} a) {{\n".format(ctype, function_prefix, name, ctype)
+    func += "\t return {}(a);\n".format(op)
+    func += "}\n"
+    func += "\n"
+    func += "\n"
+    return func
 
 def binop_to_javascript(binop_lst):
 	teststr = ""
@@ -32,6 +48,14 @@ def binop_to_javascript(binop_lst):
 		teststr += "({}, {}));\n".format(rand1, rand2)
 	return teststr
 
+def unop_to_javascript(binop_lst):
+    teststr = ""
+    INT_MAX = (1 << 31) - 1
+    for name, _, _ in binop_lst:
+        rand = random.randint(1, 10)
+        teststr += "{}exports.{}_{}".format(print_prefix, function_prefix, name)
+        teststr += "({}));\n".format(rand)
+    return teststr
 
 
 simple_binop_list = [
@@ -51,22 +75,22 @@ simple_binop_list = [
     ("I32LeS", int32_t, "<="),
     ("I32GtS", int32_t, ">") ,
     ("I32GeS", int32_t, ">="),
-    ("I64Add", uint64_t, "+"),
-    ("I64Sub", uint64_t, "-"),
-    ("I64Mul", uint64_t, "*"),
-    ("I64And", uint64_t, "&"),
-    ("I64Ior", uint64_t, "|"),
-    ("I64Xor", uint64_t, "^"),
-    ("I64Eq", uint64_t, "=="),
-    ("I64Ne", uint64_t, "!="),
-    ("I64LtU", uint64_t, "<"),
-    ("I64LeU", uint64_t, "<="),
-    ("I64GtU", uint64_t, ">"),
-    ("I64GeU", uint64_t, ">="),
-    ("I64LtS", int64_t, "<") ,
-    ("I64LeS", int64_t, "<="),
-    ("I64GtS", int64_t, ">") ,
-    ("I64GeS", int64_t, ">="),
+    #("I64Add", uint64_t, "+"),
+    #("I64Sub", uint64_t, "-"),
+    #("I64Mul", uint64_t, "*"),
+    #("I64And", uint64_t, "&"),
+    #("I64Ior", uint64_t, "|"),
+    #("I64Xor", uint64_t, "^"),
+    #("I64Eq", uint64_t, "=="),
+    #("I64Ne", uint64_t, "!="),
+    #("I64LtU", uint64_t, "<"),
+    #("I64LeU", uint64_t, "<="),
+    #("I64GtU", uint64_t, ">"),
+    #("I64GeU", uint64_t, ">="),
+    #("I64LtS", int64_t, "<") ,
+    #("I64LeS", int64_t, "<="),
+    #("I64GtS", int64_t, ">") ,
+    #("I64GeS", int64_t, ">="),
     ("F32Add", float, "+")   ,
     ("F32Sub", float, "-")   ,
     ("F32Eq", float, "==")   ,
@@ -86,97 +110,102 @@ simple_binop_list = [
     ("F32Mul", float, "*")   ,
     ("F64Mul", double, "*")  ,
     ("F32Div", float, "/")   ,
-    ("F64Div", double, "/")
+    ("F64Div", double, "/")  ,
+    ("I32DivS", int32_t, "/"),
+    ("I32DivU", uint32_t, "/"),
+    ("I32RemS", int32_t, "%"),
+    ("I32RemU", uint32_t, "%"),
+    ("I32Shl", uint32_t, "<<"),
+    ("I32ShrU", uint32_t, ">>"),
+    ("I32ShrS", int32_t,">>"),
+    #("I64DivS", int64_t, "/"),
+    #("I64DivU", uint64_t, "/"),
+    #("I64RemS", int64_t, "%"),
+    #("I64RemU", uint64_t, "%"),
+    #("I64Shl", uint64_t, "<<"),
+    #("I64ShrU", uint64_t,">>"),
+    #("I64ShrS", int64_t,">>")
 ]
 
 
 other_binop_list = [
-    ("I32DivS", int32_t),
-    ("I32DivU", uint32_t),
-    ("I32RemS", int32_t),
-    ("I32RemU", uint32_t),
-    ("I32Shl", uint32_t),
-    ("I32ShrU", uint32_t),
-    ("I32ShrS", int32_t),
-    ("I64DivS", int64_t),
-    ("I64DivU", uint64_t),
-    ("I64RemS", int64_t),
-    ("I64RemU", uint64_t),
-    ("I64Shl", uint64_t),
-    ("I64ShrU", uint64_t),
-    ("I64ShrS", int64_t),
-    ("I32Ror", int32_t),
-    ("I32Rol", int32_t),
-    ("I64Ror", int64_t),
-    ("I64Rol", int64_t),
-    ("F32Min", float),
-    ("F32Max", float),
-    ("F64Min", double),
-    ("F64Max", double),
-    ("I32AsmjsDivS", int32_t),
-    ("I32AsmjsDivU", uint32_t),
-    ("I32AsmjsRemS", int32_t),
-    ("I32AsmjsRemU", uint32_t),
+    #("I32Ror", int32_t)
+    #("I32Rol", int32_t),
+    #("I64Ror", int64_t),
+    #("I64Rol", int64_t),
+    ("F32Min", float, "std::min"),
+    ("F32Max", float, "std::max"),
+    ("F64Min", double, "std::min"),
+    ("F64Max", double, "std::max"),
+    #("I32AsmjsDivS", int32_t),
+    #("I32AsmjsDivU", uint32_t),
+    #("I32AsmjsRemS", int32_t),
+    #("I32AsmjsRemU", uint32_t),
     #("F32CopySign", Float32),
     #("F64CopySign", Float64)
 ]
 
 other_unop_list = [
-    ("I32Clz", uint32_t),
-    ("I32Ctz", uint32_t),
-    ("I32Popcnt", uint32_t),
-    ("I32Eqz", uint32_t),
-    ("I64Clz", uint64_t),
-    ("I64Ctz", uint64_t),
-    ("I64Popcnt", uint64_t),
-    ("I64Eqz", uint64_t),
-    #("F32Abs", Float32),
-    #("F32Neg", Float32),
-    ("F32Ceil", float),
-    ("F32Floor", float),
-    ("F32Trunc", float),
-    ("F32NearestInt", float),
-    #("F64Abs", Float64),
-    #("F64Neg", Float64),
-    ("F64Ceil", double),
-    ("F64Floor", double),
-    ("F64Trunc", double),
-    ("F64NearestInt", double),
-    ("I32SConvertF32", float),
-    ("I32SConvertF64", double),
-    ("I32UConvertF32", float),
-    ("I32UConvertF64", double),
-    ("I32ConvertI64", int64_t),
-    ("I64SConvertF32", float),
-    ("I64SConvertF64", double),
-    ("I64UConvertF32", float),
-    ("I64UConvertF64", double),
-    ("I64SConvertI32", int32_t),
-    ("I64UConvertI32", uint32_t),
-    ("F32SConvertI32", int32_t),
-    ("F32UConvertI32", uint32_t),
-    ("F32SConvertI64", int64_t),
-    ("F32UConvertI64", uint64_t),
-    ("F32ConvertF64", double),
-    ("F32ReinterpretI32", int32_t),
-    ("F64SConvertI32", int32_t),
-    ("F64UConvertI32", uint32_t),
-    ("F64SConvertI64", int64_t),
-    ("F64UConvertI64", uint64_t),
-    ("F64ConvertF32", float),
-    ("F64ReinterpretI64", int64_t),
-    ("I32AsmjsSConvertF32", float),
-    ("I32AsmjsUConvertF32", float),
-    ("I32AsmjsSConvertF64", double),
-    ("I32AsmjsUConvertF64", double),
-    ("F32Sqrt", float),
-    ("F64Sqrt", double)
+    #("I32Clz", uint32_t),
+    #("I32Ctz", uint32_t),
+    #("I32Popcnt", uint32_t),
+    #("I32Eqz", uint32_t),
+    #("I64Clz", uint64_t),
+    #("I64Ctz", uint64_t),
+    #("I64Popcnt", uint64_t),
+    #("I64Eqz", uint64_t),
+    ("F32Abs", float, "std::abs"),
+    #("F32Neg", float),
+    ("F32Ceil", float, "ceilf"),
+    ("F32Floor", float, "floorf"),
+    ("F32Trunc", float, "truncf"),
+    ("F32NearestInt", float, "nearbyintf"),
+    ("F64Abs", double, "std::abs"),
+    #("F64Neg", double),
+    ("F64Ceil", double, "ceil"),
+    ("F64Floor", double, "floor"),
+    ("F64Trunc", double, "trunc"),
+    ("F64NearestInt", double, "nearbyint"),
+    ("I32SConvertF32", float, "static_cast<int32_t>"),
+    ("I32SConvertF64", double, "static_cast<int32_t>"),
+    ("I32UConvertF32", float, "static_cast<uint32_t>"),
+    ("I32UConvertF64", double, "static_cast<uint32_t>"),
+    #("I32ConvertI64", int64_t),
+    #("I64SConvertF32", float),
+    #("I64SConvertF64", double),
+    #("I64UConvertF32", float),
+    #("I64UConvertF64", double),
+    #("I64SConvertI32", int32_t),
+    #("I64UConvertI32", uint32_t),
+    ("F32SConvertI32", int32_t, "static_cast<float>"),
+    ("F32UConvertI32", uint32_t, "static_cast<float>"),
+    #("F32SConvertI64", int64_t),
+    #("F32UConvertI64", uint64_t),
+    ("F32ConvertF64", double, "static_cast<float>"),
+    ("F32ReinterpretI32", int32_t, "static_cast<float>"),
+    ("F64SConvertI32", int32_t, "static_cast<double>"),
+    ("F64UConvertI32", uint32_t, "static_cast<double>"),
+    ("F64SConvertI64", int64_t, "static_cast<double>"),
+    ("F64UConvertI64", uint64_t, "static_cast<double>"),
+    ("F64ConvertF32", float, "static_cast<double>"),
+    #("F64ReinterpretI64", int64_t),
+    #("I32AsmjsSConvertF32", float),
+    #("I32AsmjsUConvertF32", float),
+    #("I32AsmjsSConvertF64", double),
+    #("I32AsmjsUConvertF64", double),
+    ("F32Sqrt", float, "sqrtf"),
+    ("F64Sqrt", double, "sqrt")
 ]
 
 if __name__ == "__main__":
-	prog = ""
-	for binop in simple_binop_list:
-		prog += binop_to_cpp(binop)
-	print(prog)
-
-	print(binop_to_javascript(simple_binop_list))
+    prog = ""
+    for binop in simple_binop_list:
+        prog += simple_binop_to_cpp(binop)
+    for binop in other_binop_list:
+        prog += other_binop_to_cpp(binop)
+    for unop in other_unop_list:
+        prog += other_unop_to_cpp(unop)
+    prog += binop_to_javascript(simple_binop_list)
+    prog += binop_to_javascript(other_binop_list)
+    prog += unop_to_javascript(other_unop_list)
+    print(prog)

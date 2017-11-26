@@ -80,20 +80,27 @@ namespace wasm {
         logger.close();
     }
     
-    /*
+    
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
         std::ofstream logger;
+        
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger <<"["<<wop<<" "<<wtype<<"]: ";
+        logger.close();
+        
         print_bytes_of_object(&v, wtype);
+        
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << " ==> ";
+        logger.close();
+        
         print_bytes_of_object(&res, wtype);
+        
         logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
         logger << std::endl;
         logger.close();
     }
-    */
+    
     
     static void log_string(const char* str) {
         std::ofstream logger;
@@ -2184,12 +2191,15 @@ class ThreadImpl {
 #define EXECUTE_OTHER_BINOP(name, ctype)                    \
   case kExpr##name: {                                       \
     TrapReason trap = kTrapCount;                           \
-    ctype rval = Pop().to<ctype>();                         \
-    ctype lval = Pop().to<ctype>();                         \
-    auto result = Execute##name(lval, rval, &trap);         \
+    WasmValue rval = Pop();                                 \
+    WasmValue lval = Pop();                                 \
+    auto result = Execute##name(lval.to<ctype>(), rval.to<ctype>(), &trap);\
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
-    Push(WasmValue(result));                                \
+    WasmValue res = WasmValue(result);                      \
+    res.setTaint(rval.getTaint() | lval.getTaint());        \
+    log_binop(lval, rval, res, STRING(ctype), STRING(name));\
+    Push(res);                                              \
     break;                                                  \
   }
           FOREACH_OTHER_BINOP(EXECUTE_OTHER_BINOP)
@@ -2198,11 +2208,14 @@ class ThreadImpl {
 #define EXECUTE_OTHER_UNOP(name, ctype)                     \
   case kExpr##name: {                                       \
     TrapReason trap = kTrapCount;                           \
-    ctype val = Pop().to<ctype>();                          \
-    auto result = Execute##name(val, &trap);                \
+    WasmValue val = Pop();                                  \
+    auto result = Execute##name(val.to<ctype>(), &trap);    \
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
-    Push(WasmValue(result));                                \
+    WasmValue res = WasmValue(result);                      \
+    res.setTaint(val.getTaint());                           \
+    log_unop(val, res, STRING(ctype), STRING(name));        \
+    Push(res);                                              \
     break;                                                  \
   }
           FOREACH_OTHER_UNOP(EXECUTE_OTHER_UNOP)
