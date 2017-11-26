@@ -180,36 +180,29 @@ class InterpreterHandle {
     //DEBUGCOMMENT
     for (int i = 0; i < 2 * num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
-      printf("Param: %x\n", ReadUnalignedValue<uint32_t>(arg_buf_ptr));
-      if (i >= num_params) {
-          uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
-          wasm_args[i - num_params].setTaint(taint);
-          continue;
-      }
+     
 #define CASE_ARG_TYPE(type, ctype)                                    \
   case type:                                                          \
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
       
-      if (sig->GetParam(i) == kWasmI32) {
-          uint32_t rawarg = ReadUnalignedValue<uint32_t>(arg_buf_ptr);
-          wasm_args[i] = WasmValue(rawarg);
-      }
-        
-      switch (sig->GetParam(i)) {
-        // CASE_ARG_TYPE(kWasmI32, uint32_t)
-        case kWasmI32: break;
-        CASE_ARG_TYPE(kWasmI64, uint64_t)
-        CASE_ARG_TYPE(kWasmF32, float)
-        CASE_ARG_TYPE(kWasmF64, double)
+        if (i < num_params) {
+            switch (sig->GetParam(i)) {
+                CASE_ARG_TYPE(kWasmI32, uint32_t)
+                CASE_ARG_TYPE(kWasmI64, uint64_t)
+                CASE_ARG_TYPE(kWasmF32, float)
+                CASE_ARG_TYPE(kWasmF64, double)
 #undef CASE_ARG_TYPE
-        default:
-          UNREACHABLE();
-      }
+                default:
+                    UNREACHABLE();
+            }
+        } else {
+            uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
+            wasm_args[i - num_params].setTaint(taint);
+        }
       arg_buf_ptr += param_size;
     }
-    printf("finished loop\n");
 
     uint32_t activation_id = StartActivation(frame_pointer);
 

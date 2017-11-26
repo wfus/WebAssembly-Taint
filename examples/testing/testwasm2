@@ -1,8 +1,0 @@
-#!/bin/sh
-
-D8BIN=" ../../../out.gn/x64.release/d8 ";
-TESTFILE1=" ../adder/simpleadd_d8.js ";
-D8FLAGS=" --wasm_interpret_all
-";
-
-$D8BIN $D8FLAGS $TESTFILE1

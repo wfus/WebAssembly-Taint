@@ -116,8 +116,8 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	// var taint1 = 3 << 24;
 	// var taint2 = 4 << 24;	
 	// print(exports);
-	print(exports.test_I32Add(7, 5));
-	print(exports.test_I32Sub(9, 8));
+	print(exports.test_I32Add(7, 5, 1, 3));
+	print(exports.test_I32Sub(9, 8, 2, 4));
 	print(exports.test_I32Mul(10, 7));
 	print(exports.test_I32And(9, 4));
 	print(exports.test_I32Ior(2, 2));
@@ -167,7 +167,7 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print(exports.test_F32Mul(6, 5));
 	print(exports.test_F64Mul(4, 8));
 	print(exports.test_F32Div(2, 4));
-	print(exports.test_F64Div(10, 6, 10, 10, 10, 10, 10, 10, 10, 10, 10));
+	print(exports.test_F64Div(10, 6, 10, 9));
 	quit()
 }).catch(err => print('Error loading WASM', err));
 print("Reached end of file");
