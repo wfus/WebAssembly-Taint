@@ -1304,7 +1304,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
 #endif
 //DEBUGCOMMENT
       FunctionSig* sig = WasmOpcodes::Signature(opcode);
-        printf("%p\n", sig);
       if (sig) {
         BuildSimpleOperator(opcode, sig);
       } else {
