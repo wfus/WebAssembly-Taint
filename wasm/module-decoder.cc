@@ -1332,12 +1332,12 @@ class ModuleDecoderImpl : public Decoder {
     //DEBUGCOMMENT
 
     // FunctionSig stores the return types first.
-    ValueType* buffer = zone->NewArray<ValueType>(2 * param_count + return_count);
+    ValueType* buffer = zone->NewArray<ValueType>(param_count + return_count);
     uint32_t b = 0;
     for (uint32_t i = 0; i < return_count; ++i) buffer[b++] = returns[i];
     for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = params[i];
-    for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = kWasmI32;
-    return new (zone) FunctionSig(return_count, 2 * param_count, buffer);
+   // for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = kWasmI32;
+    return new (zone) FunctionSig(return_count, param_count, buffer);
   }
 };
 
