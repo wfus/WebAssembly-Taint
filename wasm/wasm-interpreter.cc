@@ -2185,7 +2185,7 @@ class ThreadImpl {
     Push(res);                                               \
     break;                                                   \
 }
-              FOREACH_SIMPLE_BIN2OP(EXECUTE_SIMPLE_BINOP)
+              FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
 #undef EXECUTE_SIMPLE_BINOP
 
 #define EXECUTE_OTHER_BINOP(name, ctype)                    \
