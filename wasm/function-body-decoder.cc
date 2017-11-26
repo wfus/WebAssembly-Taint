@@ -917,6 +917,7 @@ DecodeResult VerifyWasmCodeWithStats(AccountingAllocator* allocator,
 
 DecodeResult BuildTFGraph(AccountingAllocator* allocator, TFBuilder* builder,
                           FunctionBody& body) {
+    //DEBUGCOMMENT
   Zone zone(allocator, ZONE_NAME);
   WasmFullDecoder<Decoder::kValidate, WasmGraphBuildingInterface> decoder(
       &zone, builder->module(), body, builder);
