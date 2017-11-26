@@ -3093,6 +3093,8 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
     offset += 1 << ElementSizeLog2Of(type);
   }
   DCHECK_EQ(args_size_bytes, offset);
+    
+    
 
   // We are passing the raw arg_buffer here. To the GC and other parts, it looks
   // like a Smi (lowest bit not set). In the runtime function however, don't
@@ -3101,6 +3103,14 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
       jsgraph()->SmiConstant(func_index),  // function index
       arg_buffer,                          // argument buffer
   };
+    
+    uint8_t* ptr = (uint8_t*) arg_buffer;
+    for (int i = 0; i < 256; i++) {
+        if (i % 4 == 0 ) printf("\n");
+        printf("%.2X\t", ptr[i]);
+    }
+    printf("\n");
+    
   BuildCallToRuntime(Runtime::kWasmRunInterpreter, parameters,
                      arraysize(parameters));
 

@@ -323,6 +323,7 @@ class ModuleDecoderImpl : public Decoder {
   void DecodeSection(SectionCode section_code, Vector<const uint8_t> bytes,
                      uint32_t offset, bool verify_functions = true) {
       //DEBUGCOMMENT
+      printf("decoding section\n");
     if (failed()) return;
     Reset(bytes, offset);
     TRACE("Section: %s\n", SectionName(section_code));
@@ -416,13 +417,16 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   void DecodeTypeSection() {
+      //DEBUGCOMMENT
     uint32_t signatures_count = consume_count("types count", kV8MaxWasmTypes);
+      printf("sig count: %i\n", signatures_count);
     module_->signatures.reserve(signatures_count);
     for (uint32_t i = 0; ok() && i < signatures_count; ++i) {
       TRACE("DecodeSignature[%d] module+%d\n", i,
             static_cast<int>(pc_ - start_));
       FunctionSig* s = consume_sig(module_->signature_zone.get());
       module_->signatures.push_back(s);
+        printf("sig?!?!: %p\n", s);
       uint32_t id = s ? module_->signature_map.FindOrInsert(s) : 0;
       module_->signature_ids.push_back(id);
     }
@@ -511,6 +515,7 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   void DecodeFunctionSection() {
+      //DEBUGCOMMENT
     uint32_t functions_count =
         consume_count("functions count", kV8MaxWasmFunctions);
     (IsWasm() ? GetCounters()->wasm_functions_per_wasm_module()
@@ -528,8 +533,9 @@ class ModuleDecoderImpl : public Decoder {
                                     false,       // imported
                                     false});     // exported
       WasmFunction* function = &module_->functions.back();
-    
+        printf("module-decoder sig, before: %p\n", function->sig);
       function->sig_index = consume_sig_index(module_.get(), &function->sig);
+        printf("module-decoder sig: %p\n", function->sig);
     }
   }
 
@@ -1076,6 +1082,7 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   uint32_t consume_count(const char* name, size_t maximum) {
+      //DEBUGCOMMENT
     const byte* p = pc_;
     uint32_t count = consume_u32v(name);
     if (count > maximum) {
@@ -1296,11 +1303,13 @@ class ModuleDecoderImpl : public Decoder {
 
  private:
   FunctionSig* consume_sig_internal(Zone* zone, bool has_return_values) {
+      //DEBUGCOMMENT
     if (has_return_values && !expect_u8("type form", kWasmFunctionTypeForm))
       return nullptr;
     // parse parameter types
     uint32_t param_count =
         consume_count("param count", kV8MaxWasmFunctionParams);
+      printf("paramcount!! %u\n", param_count);
     if (failed()) return nullptr;
     std::vector<ValueType> params;
     for (uint32_t i = 0; ok() && i < param_count; ++i) {
@@ -1329,7 +1338,6 @@ class ModuleDecoderImpl : public Decoder {
     uint32_t b = 0;
     for (uint32_t i = 0; i < return_count; ++i) buffer[b++] = returns[i];
     for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = params[i];
-
     return new (zone) FunctionSig(return_count, param_count, buffer);
   }
 };
