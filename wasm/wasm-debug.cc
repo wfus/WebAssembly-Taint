@@ -705,6 +705,18 @@ bool WasmDebugInfo::RunInterpreter(Address frame_pointer, int func_index,
       instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer);
 }
 
+
+//WFUEDIT
+bool WasmDebugInfo::RunInterpreterTaint(Address frame_pointer, int func_index,
+                                   uint8_t* arg_buffer, std::vector<uint8_t> taints) {
+  DCHECK_LE(0, func_index);
+  Handle<WasmInstanceObject> instance(wasm_instance());
+  return GetInterpreterHandle(this)->Execute(
+      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer);
+}
+
+
+
 std::vector<std::pair<uint32_t, int>> WasmDebugInfo::GetInterpretedStack(
     Address frame_pointer) {
   return GetInterpreterHandle(this)->GetInterpretedStack(frame_pointer);

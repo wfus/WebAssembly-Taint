@@ -19,6 +19,9 @@
 #include "src/wasm/wasm-objects-inl.h"
 #include "src/zone/zone-containers.h"
 
+#include <iostream>
+#include <fstream>
+
 namespace v8 {
 namespace internal {
 
@@ -1933,6 +1936,15 @@ void JavaScriptFrame::Print(StringStream* accumulator,
   accumulator->Add("}\n\n");
 }
 
+// WFU EDIT
+int ArgumentsAdaptorFrame::ExpectedParameters() {
+  JSFunction* function = this->function();
+  return function->shared()->internal_formal_parameter_count();
+}
+
+int ArgumentsAdaptorFrame::ActualParameters() {
+  return ComputeParametersCount();
+}
 
 void ArgumentsAdaptorFrame::Print(StringStream* accumulator,
                                   PrintMode mode,
@@ -1962,6 +1974,75 @@ void ArgumentsAdaptorFrame::Print(StringStream* accumulator,
 
   accumulator->Add("}\n\n");
 }
+
+
+std::vector<uint8_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
+  int actual = ComputeParametersCount();
+  JSFunction *function = this->function();
+  int expected = function->shared()->internal_formal_parameter_count();
+  std::vector<uint8_t> taints; 
+
+  for (int i = expected; i < 2 * expected; i++) {
+    // Taint should always be an Smi (31 bit integer) 
+    
+    if (i >= actual) {
+      taints.push_back(0);
+    } 
+    else {
+      Object* param = GetParameter(i);
+      if (param->IsSmi()) {
+        uint32_t val;
+        param->ToUint32(&val);
+        uint8_t taint = static_cast<uint8_t>(val);
+        taints.push_back(taint);
+      }
+      else {
+         // User made an error, taint overloaded wrong...
+         std::cout << "Taint overloaded incorrectly..." << std::endl;
+         taints.push_back(0); 
+      }
+    }
+  }
+ 
+
+  std::cout << "[RETURNED PARAMETERS]" << std::endl;
+  for (int i = 0; i < actual; i++) {
+      Object* param = GetParameter(i);
+      param->ShortPrint();
+      if (param->IsSmi()) std::cout << " [Smi]";
+      if (param->IsHeapObject()) std::cout << "[HeapOBJ]";
+      std::cout << std::endl;
+  }
+  
+  return taints;
+}
+
+// WFUEDIT...
+std::vector<Object*> ArgumentsAdaptorFrame::GetActualParameters() {
+  
+  bool debug = true;
+  int actual = ComputeParametersCount();
+  int expected = -1;
+  JSFunction* function = this->function();
+  expected = function->shared()->internal_formal_parameter_count();
+  std::vector<Object*> argptrs(actual);
+  
+  if (debug) std::cout << "[RETURNED PARAMETERS]" << std::endl;
+  for (int i = 0; i < actual; i++) {
+    if (debug) {
+      Object* param = GetParameter(i);
+      param->ShortPrint();
+      if (param->IsSmi()) std::cout << " [Smi]";
+      if (param->IsHeapObject()) std::cout << "[HeapOBJ]";
+      std::cout << std::endl;
+    }
+    argptrs.push_back(GetParameter(i));
+  }
+  return argptrs;
+}
+
+
+
 
 void EntryFrame::Iterate(RootVisitor* v) const {
   IteratePc(v, pc_address(), constant_pool_address(), LookupCode());

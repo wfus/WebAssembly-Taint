@@ -63,9 +63,18 @@ class WasmValue {
   template <typename T>
   inline T to_unchecked() const;
 
+  uint8_t getTaint() const {
+    return taint;
+  }
+
+  void setTaint(uint8_t t) {
+    taint = t;
+  }
+
  private:
   ValueType type_;
   uint64_t bit_pattern_;
+  uint8_t taint = 0;
 };
 
 #define DECLARE_CAST(name, localtype, ctype, ...) \

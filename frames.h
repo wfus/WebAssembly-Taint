@@ -892,6 +892,13 @@ class ArgumentsAdaptorFrame: public JavaScriptFrame {
     return static_cast<ArgumentsAdaptorFrame*>(frame);
   }
 
+  // WFUEDIT
+  // Arguments support
+  int ExpectedParameters();
+  int ActualParameters();
+  std::vector<Object*> GetActualParameters();
+  std::vector<uint8_t> GetStrippedTaints();
+
   // Printing support.
   void Print(StringStream* accumulator, PrintMode mode,
              int index) const override;

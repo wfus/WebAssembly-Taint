@@ -615,6 +615,12 @@ class WasmDebugInfo : public FixedArray {
   bool RunInterpreter(Address frame_pointer, int func_index,
                       uint8_t* arg_buffer);
 
+  //WFUEDIT
+  bool RunInterpreterTaint(Address frame_pointer, int func_index,
+                      uint8_t* arg_buffer, std::vector<uint8_t> taint);
+
+
+
   // Get the stack of the wasm interpreter as pairs of <function index, byte
   // offset>. The list is ordered bottom-to-top, i.e. caller before callee.
   std::vector<std::pair<uint32_t, int>> GetInterpretedStack(
