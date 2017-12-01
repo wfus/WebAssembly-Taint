@@ -849,7 +849,7 @@ void StandardFrame::IterateCompiledFrame(RootVisitor* v) const {
   }
 
   // We're done dealing with the register bits.
-  uint8_t* safepoint_bits = safepoint_entry.bits();
+  taint_t* safepoint_bits = safepoint_entry.bits();
   safepoint_bits += kNumSafepointRegisters >> kBitsPerByteLog2;
 
   // Visit the rest of the parameters if they are tagged.
@@ -1976,24 +1976,30 @@ void ArgumentsAdaptorFrame::Print(StringStream* accumulator,
 }
 
 
-std::vector<uint8_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
+/* Supposing that the WASM function is usually called with multiple parameters,
+ *     WASMFunction(p1, p2, ..., pn)
+ * we can overload this with taints by calling 
+ *     WASMFunction(p1, p2, ..., pn, t1, t2, ..., tn)
+ * If only k taints are supplied, it will correspond to the first k parameters and 
+ * leave the rest of the parameters with a taint of zero. It will ignore further 
+ * taints if more than n taints are supplied */ 
+std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
   int actual = ComputeParametersCount();
   JSFunction *function = this->function();
   int expected = function->shared()->internal_formal_parameter_count();
-  std::vector<uint8_t> taints; 
+  std::vector<taint_t> taints; 
 
   for (int i = expected; i < 2 * expected; i++) {
-    // Taint should always be an Smi (31 bit integer) 
-    
+    // Taint assumed to always be an Smi (32 bit integer) 
     if (i >= actual) {
       taints.push_back(0);
     } 
     else {
       Object* param = GetParameter(i);
-      if (param->IsSmi()) {
+      if (param->IsSmi()) {  // Assuming that taint will be stored as overloaded parameters
         uint32_t val;
         param->ToUint32(&val);
-        uint8_t taint = static_cast<uint8_t>(val);
+        taint_t taint = static_cast<taint_t>(val);
         taints.push_back(taint);
       }
       else {
