@@ -20,6 +20,8 @@
 #include "src/wasm/wasm-objects-inl.h"
 #include "src/zone/accounting-allocator.h"
 
+#include "src/frames.h"
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -708,7 +710,7 @@ bool WasmDebugInfo::RunInterpreter(Address frame_pointer, int func_index,
 
 //WFUEDIT
 bool WasmDebugInfo::RunInterpreterTaint(Address frame_pointer, int func_index,
-                                   uint8_t* arg_buffer, std::vector<uint8_t> taints) {
+                                   uint8_t* arg_buffer, std::vector<taint_t> taints) {
   DCHECK_LE(0, func_index);
   Handle<WasmInstanceObject> instance(wasm_instance());
   return GetInterpreterHandle(this)->Execute(

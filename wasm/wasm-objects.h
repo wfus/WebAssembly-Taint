@@ -19,6 +19,9 @@
 // Has to be the last include (doesn't have include guards)
 #include "src/objects/object-macros.h"
 
+// Included for taint typedef
+#include "src/frames.h"
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -615,9 +618,9 @@ class WasmDebugInfo : public FixedArray {
   bool RunInterpreter(Address frame_pointer, int func_index,
                       uint8_t* arg_buffer);
 
-  //WFUEDIT
+
   bool RunInterpreterTaint(Address frame_pointer, int func_index,
-                      uint8_t* arg_buffer, std::vector<uint8_t> taint);
+                      uint8_t* arg_buffer, std::vector<taint_t> taint);
 
 
 

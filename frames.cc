@@ -849,7 +849,7 @@ void StandardFrame::IterateCompiledFrame(RootVisitor* v) const {
   }
 
   // We're done dealing with the register bits.
-  taint_t* safepoint_bits = safepoint_entry.bits();
+  uint8_t* safepoint_bits = safepoint_entry.bits();
   safepoint_bits += kNumSafepointRegisters >> kBitsPerByteLog2;
 
   // Visit the rest of the parameters if they are tagged.
