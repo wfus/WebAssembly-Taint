@@ -261,7 +261,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     frame_pointer = it.frame()->fp();
   }
 
-  
+  /*
   StackTraceFrameIterator it(isolate);
   for (int i = 0; !it.done(); it.Advance()) {
     if (it.is_javascript())  printf("[%d] JS Frame\n", i);
@@ -269,7 +269,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     else                     printf("[%d] Arguments Adaptor Frame\n", i); 
     i++;
   }
-  // isolate->PrintStack(stdout);
+  // isolate->PrintStack(stdout); */
 
   /* We will check for the existence of a ArgumentsAdaptorFrame, which
    * would mean that there is an argument mismatch. This is what we
@@ -295,7 +295,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
  104   V(ARGUMENTS_ADAPTOR, ArgumentsAdaptorFrame)                             \
  105   V(BUILTIN, BuiltinFrame)                                                \
  106   V(BUILTIN_EXIT, BuiltinExitFrame)
-  */
+  
 
  
  printf("=====================\n");
@@ -321,7 +321,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
       default:
         printf("TYPE->%u\n", frame->type()); 
     } 
-  }
+  } */
   
 
   /* Basically, if we see a JS_TO_WASM and then a ARGUMENTS_ADAPTOR, 
@@ -364,7 +364,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
 	    std::cout << std::bitset<32>(taints[i]) << " ";
     } 
   
-    success = true;
+    success = instance->debug_info()->RunInterpreter(frame_pointer, func_index, arg_buffer, taints);
     
   }
   else {

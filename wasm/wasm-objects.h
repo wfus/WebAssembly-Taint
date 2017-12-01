@@ -618,7 +618,7 @@ class WasmDebugInfo : public FixedArray {
   bool RunInterpreter(Address frame_pointer, int func_index,
                       uint8_t* arg_buffer);
 
-  bool RunInterpreter(Address frame_pointer, int func_index,
+  bool RunInterpreterTaint(Address frame_pointer, int func_index,
                       uint8_t* arg_buffer, std::vector<taint_t> taint);
 
   // Get the stack of the wasm interpreter as pairs of <function index, byte

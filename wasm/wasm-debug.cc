@@ -168,18 +168,10 @@ class InterpreterHandle {
 
   bool Execute(Handle<WasmInstanceObject> instance_object,
                Address frame_pointer, uint32_t func_index,
-               uint8_t* arg_buffer) {
+               uint8_t* arg_buffer, std::vector<taint_t> taint) {
     DCHECK_GE(module()->functions.size(), func_index);
     FunctionSig* sig = module()->functions[func_index].sig;
     DCHECK_GE(kMaxInt, sig->parameter_count());
-      /*
-    ScopedVector<WasmValue> wasm_args(num_params);
-    uint8_t* arg_buf_ptr = arg_buffer;
-    //DEBUGCOMMENT
-    for (int i = 0; i < num_params; ++i) {
-      uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
-
-       */
     int num_params = static_cast<int>(sig->parameter_count());
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
@@ -190,22 +182,6 @@ class InterpreterHandle {
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
-        /*
-         if (i < num_params) {
-            switch (sig->GetParam(i)) {
-                CASE_ARG_TYPE(kWasmI32, uint32_t)
-                CASE_ARG_TYPE(kWasmI64, uint64_t)
-                CASE_ARG_TYPE(kWasmF32, float)
-                CASE_ARG_TYPE(kWasmF64, double)
-#undef CASE_ARG_TYPE
-                default:
-                    UNREACHABLE();
-            }
-        } else {
-            uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
-            wasm_args[i - num_params].setTaint(taint);
-        }
-*/
       switch (sig->GetParam(i)) {
         CASE_ARG_TYPE(kWasmI32, uint32_t)
         CASE_ARG_TYPE(kWasmI64, uint64_t)
@@ -285,6 +261,103 @@ class InterpreterHandle {
 
     return true;
   }
+
+  bool ExecuteTaint(Handle<WasmInstanceObject> instance_object,
+                 Address frame_pointer, uint32_t func_index,
+                 uint8_t* arg_buffer, std::vector<taint_t> taint) {
+        DCHECK_GE(module()->functions.size(), func_index);
+        FunctionSig* sig = module()->functions[func_index].sig;
+        DCHECK_GE(kMaxInt, sig->parameter_count());
+        int num_params = static_cast<int>(sig->parameter_count());
+        ScopedVector<WasmValue> wasm_args(num_params);
+        uint8_t* arg_buf_ptr = arg_buffer;
+        for (int i = 0; i < num_params; ++i) {
+            uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
+#define CASE_ARG_TYPE(type, ctype)                                    \
+case type:                                                          \
+DCHECK_EQ(param_size, sizeof(ctype));                             \
+wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
+wasm_args[i].setTaint(taint.at(i))
+break;
+            switch (sig->GetParam(i)) {
+                    CASE_ARG_TYPE(kWasmI32, uint32_t)
+                    CASE_ARG_TYPE(kWasmI64, uint64_t)
+                    CASE_ARG_TYPE(kWasmF32, float)
+                    CASE_ARG_TYPE(kWasmF64, double)
+#undef CASE_ARG_TYPE
+                default:
+                    UNREACHABLE();
+            }
+            arg_buf_ptr += param_size;
+        }
+        
+        uint32_t activation_id = StartActivation(frame_pointer);
+        
+        WasmInterpreter::HeapObjectsScope heap_objects_scope(&interpreter_,
+                                                             instance_object);
+        WasmInterpreter::Thread* thread = interpreter_.GetThread(0);
+        thread->InitFrame(&module()->functions[func_index], wasm_args.start());
+        bool finished = false;
+        while (!finished) {
+            // TODO(clemensh): Add occasional StackChecks.
+            WasmInterpreter::State state = ContinueExecution(thread);
+            switch (state) {
+                case WasmInterpreter::State::PAUSED:
+                    NotifyDebugEventListeners(thread);
+                    break;
+                case WasmInterpreter::State::FINISHED:
+                    // Perfect, just break the switch and exit the loop.
+                    finished = true;
+                    break;
+                case WasmInterpreter::State::TRAPPED: {
+                    int message_id =
+                    WasmOpcodes::TrapReasonToMessageId(thread->GetTrapReason());
+                    Handle<Object> exception = isolate_->factory()->NewWasmRuntimeError(
+                                                                                        static_cast<MessageTemplate::Template>(message_id));
+                    isolate_->Throw(*exception);
+                    // Handle this exception. Return without trying to read back the
+                    // return value.
+                    auto result = thread->HandleException(isolate_);
+                    return result == WasmInterpreter::Thread::HANDLED;
+                } break;
+                case WasmInterpreter::State::STOPPED:
+                    // An exception happened, and the current activation was unwound.
+                    DCHECK_EQ(thread->ActivationFrameBase(activation_id),
+                              thread->GetFrameCount());
+                    return false;
+                    // RUNNING should never occur here.
+                case WasmInterpreter::State::RUNNING:
+                default:
+                    UNREACHABLE();
+            }
+        }
+        
+        // Copy back the return value
+        DCHECK_GE(kV8MaxWasmFunctionReturns, sig->return_count());
+        // TODO(wasm): Handle multi-value returns.
+        DCHECK_EQ(1, kV8MaxWasmFunctionReturns);
+        if (sig->return_count()) {
+            WasmValue ret_val = thread->GetReturnValue(0);
+#define CASE_RET_TYPE(type, ctype)                                       \
+case type:                                                             \
+DCHECK_EQ(1 << ElementSizeLog2Of(sig->GetReturn(0)), sizeof(ctype)); \
+WriteUnalignedValue<ctype>(arg_buffer, ret_val.to<ctype>());         \
+break;
+            switch (sig->GetReturn(0)) {
+                    CASE_RET_TYPE(kWasmI32, uint32_t)
+                    CASE_RET_TYPE(kWasmI64, uint64_t)
+                    CASE_RET_TYPE(kWasmF32, float)
+                    CASE_RET_TYPE(kWasmF64, double)
+#undef CASE_RET_TYPE
+                default:
+                    UNREACHABLE();
+            }
+        }
+        
+        FinishActivation(frame_pointer, activation_id);
+        
+        return true;
+    }
 
   WasmInterpreter::State ContinueExecution(WasmInterpreter::Thread* thread) {
     switch (next_step_action_) {
@@ -734,12 +807,12 @@ bool WasmDebugInfo::RunInterpreter(Address frame_pointer, int func_index,
 
 
 //WFUEDIT
-bool WasmDebugInfo::RunInterpreter(Address frame_pointer, int func_index,
+bool WasmDebugInfo::RunInterpreterTaint(Address frame_pointer, int func_index,
                                    uint8_t* arg_buffer, std::vector<taint_t> taints) {
   DCHECK_LE(0, func_index);
   Handle<WasmInstanceObject> instance(wasm_instance());
-  return GetInterpreterHandle(this)->Execute(
-      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer);
+  return GetInterpreterHandle(this)->ExecuteTaint(
+      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer, taint);
 }
 
 std::vector<std::pair<uint32_t, int>> WasmDebugInfo::GetInterpretedStack(
