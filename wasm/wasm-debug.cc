@@ -173,15 +173,12 @@ class InterpreterHandle {
     FunctionSig* sig = module()->functions[func_index].sig;
     DCHECK_GE(kMaxInt, sig->parameter_count());
       /*
-<<<<<<< HEAD
-    int num_params = static_cast<int>(sig->parameter_count()) / 2;
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
     //DEBUGCOMMENT
-    for (int i = 0; i < 2 * num_params; ++i) {
+    for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
-     
-=======
+
        */
     int num_params = static_cast<int>(sig->parameter_count());
     ScopedVector<WasmValue> wasm_args(num_params);
@@ -194,9 +191,7 @@ class InterpreterHandle {
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
         /*
-<<<<<<< HEAD
-      
-        if (i < num_params) {
+         if (i < num_params) {
             switch (sig->GetParam(i)) {
                 CASE_ARG_TYPE(kWasmI32, uint32_t)
                 CASE_ARG_TYPE(kWasmI64, uint64_t)
@@ -210,7 +205,7 @@ class InterpreterHandle {
             uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
             wasm_args[i - num_params].setTaint(taint);
         }
-=======*/
+*/
       switch (sig->GetParam(i)) {
         CASE_ARG_TYPE(kWasmI32, uint32_t)
         CASE_ARG_TYPE(kWasmI64, uint64_t)

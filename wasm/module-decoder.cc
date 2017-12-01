@@ -1325,7 +1325,6 @@ class ModuleDecoderImpl : public Decoder {
     uint32_t b = 0;
     for (uint32_t i = 0; i < return_count; ++i) buffer[b++] = returns[i];
     for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = params[i];
-
     return new (zone) FunctionSig(return_count, param_count, buffer);
   }
 };
