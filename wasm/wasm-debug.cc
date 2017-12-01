@@ -277,7 +277,7 @@ class InterpreterHandle {
 case type:                                                          \
 DCHECK_EQ(param_size, sizeof(ctype));                             \
 wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
-wasm_args[i].setTaint(taint.at(i))
+wasm_args[i].setTaint(taint.at(i));
 break;
             switch (sig->GetParam(i)) {
                     CASE_ARG_TYPE(kWasmI32, uint32_t)
@@ -812,7 +812,7 @@ bool WasmDebugInfo::RunInterpreterTaint(Address frame_pointer, int func_index,
   DCHECK_LE(0, func_index);
   Handle<WasmInstanceObject> instance(wasm_instance());
   return GetInterpreterHandle(this)->ExecuteTaint(
-      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer, taint);
+      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer, taints);
 }
 
 std::vector<std::pair<uint32_t, int>> WasmDebugInfo::GetInterpretedStack(
