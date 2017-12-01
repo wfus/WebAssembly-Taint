@@ -982,8 +982,6 @@ void WasmJs::Install(Isolate* isolate, bool exposed_on_global_object) {
                         runtime_error, attributes);
 }
 
-// DEBUGCOMMENT
-    
 #undef ASSIGN
 #undef EXTRACT_THIS
 

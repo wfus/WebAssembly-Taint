@@ -1159,11 +1159,10 @@ class WasmFullDecoder : public WasmDecoder<validate> {
     WasmDecoder<validate>::DecodeLocals(this, this->sig_, this->local_types_);
     CALL_INTERFACE(StartFunction);
     DecodeFunctionBody();
-      //DEBUGCOMMENT
     if (!this->failed()) CALL_INTERFACE(FinishFunction);
 
     if (this->failed()) return this->TraceFailed();
- 
+
     if (!control_.empty()) {
       // Generate a better error message whether the unterminated control
       // structure is the function body block or an innner structure.
@@ -1174,7 +1173,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
       }
       return TraceFailed();
     }
-     
 
     if (!last_end_found_) {
       this->error("function body must end with \"end\" opcode");
@@ -1302,7 +1300,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
               WasmOpcodes::OpcodeName(opcode));
       }
 #endif
-//DEBUGCOMMENT
       FunctionSig* sig = WasmOpcodes::Signature(opcode);
       if (sig) {
         BuildSimpleOperator(opcode, sig);
@@ -1895,7 +1892,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
 
   // Pops arguments as required by signature into {args_}.
   V8_INLINE void PopArgs(FunctionSig* sig) {
-      //DEBUGCOMMENT
     int count = sig ? static_cast<int>(sig->parameter_count()) : 0;
     args_.resize(count);
     for (int i = count - 1; i >= 0; --i) {
@@ -2197,7 +2193,6 @@ class WasmFullDecoder : public WasmDecoder<validate> {
   }
 
   Value Pop() {
-      //DEBUGCOMMENT
     DCHECK(!control_.empty());
     uint32_t limit = control_.back().stack_depth;
     if (stack_.size() <= limit) {

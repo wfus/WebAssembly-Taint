@@ -19,6 +19,13 @@
 #include "src/wasm/wasm-objects.h"
 #include "src/wasm/wasm-opcodes.h"
 
+#include "src/frames-inl.h"
+
+#include <iostream>
+#include <fstream>
+
+#define STRING(s) #s
+
 namespace v8 {
 namespace internal {
 
@@ -253,10 +260,117 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     DCHECK_EQ(StackFrame::WASM_INTERPRETER_ENTRY, it.frame()->type());
     frame_pointer = it.frame()->fp();
   }
-  // DEBUGCOMMENT
-  bool success = instance->debug_info()->RunInterpreter(frame_pointer,
-                                                        func_index, arg_buffer);
 
+  /*
+  StackTraceFrameIterator it(isolate);
+  for (int i = 0; !it.done(); it.Advance()) {
+    if (it.is_javascript())  printf("[%d] JS Frame\n", i);
+    else if (it.is_wasm())   printf("[%d] WASM Frame\n", i); 
+    else                     printf("[%d] Arguments Adaptor Frame\n", i); 
+    i++;
+  }*/
+  // isolate->PrintStack(stdout);
+
+  /* We will check for the existence of a ArgumentsAdaptorFrame, which
+   * would mean that there is an argument mismatch. This is what we
+   * will use for taint */
+
+  /*
+ #define STACK_FRAME_TYPE_LIST(V)                                          \
+  89   V(ENTRY, EntryFrame)                                                    \
+  90   V(CONSTRUCT_ENTRY, ConstructEntryFrame)                                 \
+  91   V(EXIT, ExitFrame)                                                      \
+  92   V(OPTIMIZED, OptimizedFrame)                                            \
+  93   V(WASM_COMPILED, WasmCompiledFrame)                                     \
+  94   V(WASM_TO_JS, WasmToJsFrame)                                            \
+  95   V(JS_TO_WASM, JsToWasmFrame)                                            \
+  96   V(WASM_INTERPRETER_ENTRY, WasmInterpreterEntryFrame)                    \
+  97   V(C_WASM_ENTRY, CWasmEntryFrame)                                        \
+  98   V(INTERPRETED, InterpretedFrame)                                        \
+  99   V(STUB, StubFrame)                                                      \
+ 100   V(BUILTIN_CONTINUATION, BuiltinContinuationFrame)                       \
+ 101   V(JAVA_SCRIPT_BUILTIN_CONTINUATION, JavaScriptBuiltinContinuationFrame) \
+ 102   V(INTERNAL, InternalFrame)                                              \
+ 103   V(CONSTRUCT, ConstructFrame)                                            \
+ 104   V(ARGUMENTS_ADAPTOR, ArgumentsAdaptorFrame)                             \
+ 105   V(BUILTIN, BuiltinFrame)                                                \
+ 106   V(BUILTIN_EXIT, BuiltinExitFrame)
+  */
+
+ /*
+ printf("=====================\n");
+ printf("*CURRENT_FRAME_TRACE*\n");
+ printf("=====================\n");
+ for (StackFrameIterator it(isolate); !it.done(); it.Advance()) {
+    StackFrame* frame = it.frame();
+    switch(frame->type()) {
+      case StackFrame::WASM_INTERPRETER_ENTRY: printf("wasm_interpreter\n"); break;
+      case StackFrame::C_WASM_ENTRY:           printf("C_wasm_entry\n"); break;
+      case StackFrame::BUILTIN:                printf("BUILTIN\n"); break;
+      case StackFrame::STUB:                   printf("STUB\n"); break;
+      case StackFrame::INTERPRETED:            printf("INTERPRETED\n"); break;
+      case StackFrame::ARGUMENTS_ADAPTOR:      printf("ARGUMENTS_ADAPTOR\n"); break;
+      case StackFrame::INTERNAL:               printf("INTERNAL\n"); break;
+      case StackFrame::BUILTIN_EXIT:           printf("BUILTIN_EXIT\n"); break;
+      case StackFrame::CONSTRUCT:              printf("CONSTRUCT\n"); break;
+      case StackFrame::WASM_TO_JS:             printf("WASM_TO_JS\n"); break;
+      case StackFrame::WASM_COMPILED:          printf("WASM_COMPILED\n"); break;
+      case StackFrame::JS_TO_WASM:             printf("JS_TO_WASM\n"); break;
+      case StackFrame::EXIT:                   printf("EXIT\n"); break;
+      case StackFrame::ENTRY:                  printf("ENTRY\n"); break;
+      default:
+        printf("TYPE->%u\n", frame->type()); 
+    } 
+  }
+  */
+
+  /* Basically, if we see a JS_TO_WASM and then a ARGUMENTS_ADAPTOR, 
+   * we know that we've overloaded the shit out of our WASM function. 
+   * Let's look for this boys. 
+   */
+  
+  bool isOverloadingWithTaint = false;
+  bool previousWasJStoWASM = false;
+  ArgumentsAdaptorFrame* arg_adapt_frame = nullptr;
+  for (StackFrameIterator it(isolate); !it.done(); it.Advance()) {
+    StackFrame* cur_frame = it.frame();
+    if (cur_frame->type() == StackFrame::JS_TO_WASM) {
+      previousWasJStoWASM = true;
+    }
+    else if (cur_frame->type() == StackFrame::ARGUMENTS_ADAPTOR) {
+      // We are only overloading WASM if the PREVIOUS was 
+      if (previousWasJStoWASM) {
+        arg_adapt_frame = static_cast<ArgumentsAdaptorFrame*>(cur_frame);
+        isOverloadingWithTaint = true;
+        break;
+      }
+    }
+    else {
+      previousWasJStoWASM = false;
+    } 
+  }
+
+  bool success;
+  if (isOverloadingWithTaint) {
+    int expected = arg_adapt_frame->ExpectedParameters(); 
+    int actual = arg_adapt_frame->ActualParameters(); 
+    printf("[TAINTED] Overloaded with %d args when expecting %d |=| \n", actual, expected);
+    assert(actual > expected);
+    // We will take up to 2*expected parameters as taint, stored in a taintarray
+    std::vector<taint_t> taints = arg_adapt_frame->GetStrippedTaints();;
+    
+    std::cout<< "Taints: ";
+    for (unsigned long i = 0; i < taints.size(); i++) {
+	    std::cout << std::bitset<32>(taints[i]) << " ";
+    } 
+  
+    success = true;
+    
+  }
+  else {
+    success = instance->debug_info()->RunInterpreter(frame_pointer,
+                                                        func_index, arg_buffer);
+  }
   if (!success) {
     DCHECK(isolate->has_pending_exception());
     return isolate->heap()->exception();

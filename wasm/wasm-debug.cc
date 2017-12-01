@@ -20,6 +20,8 @@
 #include "src/wasm/wasm-objects-inl.h"
 #include "src/zone/accounting-allocator.h"
 
+#include "src/frames.h"
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -163,31 +165,33 @@ class InterpreterHandle {
   // Returns true if exited regularly, false if a trap/exception occurred and
   // was not handled inside this activation. In the latter case, a pending
   // exception will have been set on the isolate.
-    
-  /* TEMPORARY SOLUTION (WFUEDIT)
-   * We will just make the taint the top 1 byte of the whatever data type
-   * we recieve.
-   */
+
   bool Execute(Handle<WasmInstanceObject> instance_object,
                Address frame_pointer, uint32_t func_index,
                uint8_t* arg_buffer) {
     DCHECK_GE(module()->functions.size(), func_index);
     FunctionSig* sig = module()->functions[func_index].sig;
     DCHECK_GE(kMaxInt, sig->parameter_count());
-    int num_params = static_cast<int>(sig->parameter_count());
+      /*
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
     //DEBUGCOMMENT
     for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
-     
+
+       */
+    int num_params = static_cast<int>(sig->parameter_count());
+    ScopedVector<WasmValue> wasm_args(num_params);
+    uint8_t* arg_buf_ptr = arg_buffer;
+    for (int i = 0; i < num_params; ++i) {
+      uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
 #define CASE_ARG_TYPE(type, ctype)                                    \
   case type:                                                          \
     DCHECK_EQ(param_size, sizeof(ctype));                             \
     wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
     break;
-      
-        if (i < num_params) {
+        /*
+         if (i < num_params) {
             switch (sig->GetParam(i)) {
                 CASE_ARG_TYPE(kWasmI32, uint32_t)
                 CASE_ARG_TYPE(kWasmI64, uint64_t)
@@ -201,6 +205,16 @@ class InterpreterHandle {
             uint8_t taint = (char) ReadUnalignedValue<uint32_t>(arg_buf_ptr);
             wasm_args[i - num_params].setTaint(taint);
         }
+*/
+      switch (sig->GetParam(i)) {
+        CASE_ARG_TYPE(kWasmI32, uint32_t)
+        CASE_ARG_TYPE(kWasmI64, uint64_t)
+        CASE_ARG_TYPE(kWasmF32, float)
+        CASE_ARG_TYPE(kWasmF64, double)
+#undef CASE_ARG_TYPE
+        default:
+          UNREACHABLE();
+      }
       arg_buf_ptr += param_size;
     }
 
@@ -712,6 +726,16 @@ void WasmDebugInfo::PrepareStep(StepAction step_action) {
 
 bool WasmDebugInfo::RunInterpreter(Address frame_pointer, int func_index,
                                    uint8_t* arg_buffer) {
+  DCHECK_LE(0, func_index);
+  Handle<WasmInstanceObject> instance(wasm_instance());
+  return GetInterpreterHandle(this)->Execute(
+      instance, frame_pointer, static_cast<uint32_t>(func_index), arg_buffer);
+}
+
+
+//WFUEDIT
+bool WasmDebugInfo::RunInterpreterTaint(Address frame_pointer, int func_index,
+                                   uint8_t* arg_buffer, std::vector<taint_t> taints) {
   DCHECK_LE(0, func_index);
   Handle<WasmInstanceObject> instance(wasm_instance());
   return GetInterpreterHandle(this)->Execute(

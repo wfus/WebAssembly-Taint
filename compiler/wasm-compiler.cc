@@ -85,8 +85,6 @@ WasmGraphBuilder::WasmGraphBuilder(
       runtime_exception_support_(exception_support),
       sig_(sig),
       source_position_table_(source_position_table) {
-          // DEBUGCOMMENT
-         
   for (size_t i = sig->parameter_count(); i > 0 && !has_simd_; --i) {
     if (sig->GetParam(i - 1) == wasm::kWasmS128) has_simd_ = true;
   }
@@ -3058,15 +3056,11 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
   Node* start = Start(param_count + 3);
   *effect_ = start;
   *control_ = start;
-  
-  // DEBUGCOMMENT
-  
   // Compute size for the argument buffer.
   int args_size_bytes = 0;
   for (wasm::ValueType type : sig_->parameters()) {
     args_size_bytes += 1 << ElementSizeLog2Of(type);
   }
-    
   // The return value is also passed via this buffer:
   DCHECK_GE(wasm::kV8MaxWasmFunctionReturns, sig_->return_count());
   // TODO(wasm): Handle multi-value returns.
@@ -3093,8 +3087,6 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
     offset += 1 << ElementSizeLog2Of(type);
   }
   DCHECK_EQ(args_size_bytes, offset);
-    
-    
 
   // We are passing the raw arg_buffer here. To the GC and other parts, it looks
   // like a Smi (lowest bit not set). In the runtime function however, don't
@@ -3103,7 +3095,7 @@ void WasmGraphBuilder::BuildWasmInterpreterEntry(uint32_t func_index) {
       jsgraph()->SmiConstant(func_index),  // function index
       arg_buffer,                          // argument buffer
   };
-    
+
   BuildCallToRuntime(Runtime::kWasmRunInterpreter, parameters,
                      arraysize(parameters));
 
@@ -3328,7 +3320,6 @@ Node* WasmGraphBuilder::BuildCallToRuntimeWithContext(Runtime::FunctionId f,
                                                       Node* js_context,
                                                       Node** parameters,
                                                       int parameter_count) {
-    //DEBUGCOMMENT
   const Runtime::Function* fun = Runtime::FunctionForId(f);
   CallDescriptor* desc = Linkage::GetRuntimeCallDescriptor(
       jsgraph()->zone(), f, fun->nargs, Operator::kNoProperties,
@@ -4713,8 +4704,6 @@ WasmCompilationUnit::WasmCompilationUnit(
       runtime_exception_support_(exception_support),
       lower_simd_(lower_simd),
       mode_(mode) {
-          //DEBUGCOMMENT
-          
   switch (mode_) {
     case WasmCompilationUnit::CompilationMode::kLiftoff:
       new (&liftoff_) LiftoffData(isolate);

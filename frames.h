@@ -15,6 +15,18 @@
 namespace v8 {
 namespace internal {
 
+/*=============================================================================
+ * Taint Tracking v0.1
+ * @authors: rlin, wfu
+ * Implements taint tracking for the WASM Interpreter. Modifies the 
+ * ArgumentAdaptor frame in order to allow for overloading WASM functions
+ * to pass in taint values. In this file, we add some functions to the
+ * ArgumentAdaptorFrame class as well as define a custom type for taint. 
+ * Currently using taint as an unsigned 32-bit integer. 
+ *===========================================================================*/
+
+typedef uint32_t taint_t;
+
 class AbstractCode;
 class Debug;
 class ObjectVisitor;
@@ -891,6 +903,13 @@ class ArgumentsAdaptorFrame: public JavaScriptFrame {
     DCHECK(frame->is_arguments_adaptor());
     return static_cast<ArgumentsAdaptorFrame*>(frame);
   }
+
+  // WFUEDIT
+  // Arguments support
+  int ExpectedParameters();
+  int ActualParameters();
+  std::vector<Object*> GetActualParameters();
+  std::vector<taint_t> GetStrippedTaints();
 
   // Printing support.
   void Print(StringStream* accumulator, PrintMode mode,
