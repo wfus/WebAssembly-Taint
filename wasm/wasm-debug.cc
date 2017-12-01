@@ -277,7 +277,7 @@ class InterpreterHandle {
 case type:                                                          \
 DCHECK_EQ(param_size, sizeof(ctype));                             \
 wasm_args[i] = WasmValue(ReadUnalignedValue<ctype>(arg_buf_ptr)); \
-wasm_args[i].setTaint(taint.at(i));
+wasm_args[i].setTaint(taint.at(i));                               \
 break;
             switch (sig->GetParam(i)) {
                     CASE_ARG_TYPE(kWasmI32, uint32_t)
