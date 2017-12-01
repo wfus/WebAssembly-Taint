@@ -168,7 +168,7 @@ class InterpreterHandle {
 
   bool Execute(Handle<WasmInstanceObject> instance_object,
                Address frame_pointer, uint32_t func_index,
-               uint8_t* arg_buffer, std::vector<taint_t> taint) {
+               uint8_t* arg_buffer) {
     DCHECK_GE(module()->functions.size(), func_index);
     FunctionSig* sig = module()->functions[func_index].sig;
     DCHECK_GE(kMaxInt, sig->parameter_count());
