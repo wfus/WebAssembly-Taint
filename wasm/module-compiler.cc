@@ -84,8 +84,6 @@ class ModuleCompiler {
     void AddUnit(compiler::ModuleEnv* module_env, const WasmFunction* function,
                  uint32_t buffer_offset, Vector<const uint8_t> bytes,
                  WasmName name) {
-        //DEBUGCOMMENT
-       
       units_.emplace_back(new compiler::WasmCompilationUnit(
           compiler_->isolate_, module_env,
           wasm::FunctionBody{function->sig, buffer_offset, bytes.begin(),
@@ -499,15 +497,12 @@ MaybeHandle<WasmModuleObject> SyncCompile(Isolate* isolate,
   std::unique_ptr<byte[]> copy(new byte[bytes.length()]);
   memcpy(copy.get(), bytes.start(), bytes.length());
   ModuleWireBytes bytes_copy(copy.get(), copy.get() + bytes.length());
-   
   ModuleResult result = SyncDecodeWasmModule(
       isolate, bytes_copy.start(), bytes_copy.end(), false, kWasmOrigin);
   if (result.failed()) {
     thrower->CompileFailed("Wasm decoding failed", result);
     return {};
   }
-  //DEBUGCOMMENT
-    
   // Transfer ownership of the WasmModule to the {WasmModuleWrapper} generated
   // in {CompileToModuleObject}.
   return ModuleCompiler::CompileToModuleObject(
@@ -1000,7 +995,6 @@ size_t ModuleCompiler::InitializeCompilationUnits(
     Vector<const uint8_t> bytes(wire_bytes.start() + func->code.offset(),
                                 func->code.end_offset() - func->code.offset());
     WasmName name = wire_bytes.GetName(func);
-      //DEBUGCOMMENT
     builder.AddUnit(module_env, func, buffer_offset, bytes, name);
   }
   builder.Commit();
@@ -1058,8 +1052,6 @@ void ModuleCompiler::CompileInParallel(const ModuleWireBytes& wire_bytes,
                                        compiler::ModuleEnv* module_env,
                                        std::vector<Handle<Code>>& results,
                                        ErrorThrower* thrower) {
-    //DEBUGCOMMENT
-  
   const WasmModule* module = module_env->module;
   // Data structures for the parallel compilation.
 
@@ -1168,8 +1160,6 @@ MaybeHandle<WasmModuleObject> ModuleCompiler::CompileToModuleObject(
     Isolate* isolate, ErrorThrower* thrower, std::unique_ptr<WasmModule> module,
     const ModuleWireBytes& wire_bytes, Handle<Script> asm_js_script,
     Vector<const byte> asm_js_offset_table_bytes) {
-    //DEBUGCOMMENT
-   
   Handle<Code> centry_stub = CEntryStub(isolate, 1).GetCode();
   ModuleCompiler compiler(isolate, module.get(), centry_stub);
   return compiler.CompileToModuleObjectInternal(thrower, std::move(module),
@@ -1506,7 +1496,6 @@ MaybeHandle<WasmModuleObject> ModuleCompiler::CompileToModuleObjectInternal(
         V8::GetCurrentPlatform()->NumberOfAvailableBackgroundThreads() > 0;
     // Avoid a race condition by collecting results into a second vector.
     std::vector<Handle<Code>> results(env->module->functions.size());
-//DEBUGCOMMENT
     if (compile_parallel) {
       CompileInParallel(wire_bytes, env.get(), results, thrower);
     } else {

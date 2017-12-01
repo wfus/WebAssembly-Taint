@@ -19,6 +19,9 @@
 // Has to be the last include (doesn't have include guards)
 #include "src/objects/object-macros.h"
 
+// Included for taint typedef
+#include "src/frames.h"
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -614,6 +617,9 @@ class WasmDebugInfo : public FixedArray {
   // case, a pending exception will have been set on the isolate.
   bool RunInterpreter(Address frame_pointer, int func_index,
                       uint8_t* arg_buffer);
+
+  bool RunInterpreterTaint(Address frame_pointer, int func_index,
+                      uint8_t* arg_buffer, std::vector<taint_t> taint);
 
   // Get the stack of the wasm interpreter as pairs of <function index, byte
   // offset>. The list is ordered bottom-to-top, i.e. caller before callee.

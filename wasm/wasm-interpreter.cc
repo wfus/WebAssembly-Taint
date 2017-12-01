@@ -42,6 +42,7 @@
 #define STRING(s) #s
 
 
+
 namespace v8 {
 namespace internal {
 namespace wasm {
@@ -1122,7 +1123,7 @@ class CodeMap {
   }
 };
 
-// DEBUGCOMMENT
+
 Handle<Object> WasmValueToNumber(Factory* factory, WasmValue val,
                                  wasm::ValueType type) {
   switch (type) {
@@ -1494,7 +1495,7 @@ class ThreadImpl {
     frames_.pop_back();
       
     log_string("RETURN TRAP: ");
-    
+
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
       state_ = WasmInterpreter::FINISHED;
@@ -1520,6 +1521,7 @@ class ThreadImpl {
       sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
               (*code)->function->func_index, *pc);
       log_string(buf);
+
       return true;
     }
   }
@@ -2186,6 +2188,7 @@ class ThreadImpl {
     break;                                                   \
 }
               FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
+
 #undef EXECUTE_SIMPLE_BINOP
 
 #define EXECUTE_OTHER_BINOP(name, ctype)                    \

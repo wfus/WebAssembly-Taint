@@ -322,8 +322,6 @@ class ModuleDecoderImpl : public Decoder {
 
   void DecodeSection(SectionCode section_code, Vector<const uint8_t> bytes,
                      uint32_t offset, bool verify_functions = true) {
-      //DEBUGCOMMENT
-     
     if (failed()) return;
     Reset(bytes, offset);
     TRACE("Section: %s\n", SectionName(section_code));
@@ -417,16 +415,13 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   void DecodeTypeSection() {
-      //DEBUGCOMMENT
     uint32_t signatures_count = consume_count("types count", kV8MaxWasmTypes);
-     
     module_->signatures.reserve(signatures_count);
     for (uint32_t i = 0; ok() && i < signatures_count; ++i) {
       TRACE("DecodeSignature[%d] module+%d\n", i,
             static_cast<int>(pc_ - start_));
       FunctionSig* s = consume_sig(module_->signature_zone.get());
       module_->signatures.push_back(s);
-      
       uint32_t id = s ? module_->signature_map.FindOrInsert(s) : 0;
       module_->signature_ids.push_back(id);
     }
@@ -515,7 +510,6 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   void DecodeFunctionSection() {
-      //DEBUGCOMMENT
     uint32_t functions_count =
         consume_count("functions count", kV8MaxWasmFunctions);
     (IsWasm() ? GetCounters()->wasm_functions_per_wasm_module()
@@ -848,7 +842,6 @@ class ModuleDecoderImpl : public Decoder {
 
   // Decodes an entire module.
   ModuleResult DecodeModule(Isolate* isolate, bool verify_functions = true) {
-      //DEBUGCOMMENT
     StartDecoding(isolate);
     uint32_t offset = 0;
     DecodeModuleHeader(Vector<const uint8_t>(start(), end() - start()), offset);
@@ -1079,7 +1072,6 @@ class ModuleDecoderImpl : public Decoder {
   }
 
   uint32_t consume_count(const char* name, size_t maximum) {
-      //DEBUGCOMMENT
     const byte* p = pc_;
     uint32_t count = consume_u32v(name);
     if (count > maximum) {
@@ -1300,7 +1292,6 @@ class ModuleDecoderImpl : public Decoder {
 
  private:
   FunctionSig* consume_sig_internal(Zone* zone, bool has_return_values) {
-      //DEBUGCOMMENT
     if (has_return_values && !expect_u8("type form", kWasmFunctionTypeForm))
       return nullptr;
     // parse parameter types
@@ -1328,25 +1319,20 @@ class ModuleDecoderImpl : public Decoder {
     }
 
     if (failed()) return nullptr;
-      
-    //DEBUGCOMMENT
 
     // FunctionSig stores the return types first.
-    ValueType* buffer = zone->NewArray<ValueType>(2 * param_count + return_count);
+    ValueType* buffer = zone->NewArray<ValueType>(param_count + return_count);
     uint32_t b = 0;
     for (uint32_t i = 0; i < return_count; ++i) buffer[b++] = returns[i];
     for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = params[i];
-    for (uint32_t i = 0; i < param_count; ++i) buffer[b++] = kWasmI32;
-    return new (zone) FunctionSig(return_count, 2 * param_count, buffer);
+
+    return new (zone) FunctionSig(return_count, param_count, buffer);
   }
 };
 
 ModuleResult DecodeWasmModule(Isolate* isolate, const byte* module_start,
                               const byte* module_end, bool verify_functions,
                               ModuleOrigin origin, Counters* counters) {
-    
-    //DEBUGCOMMENT
-    
   auto counter = origin == kWasmOrigin
                      ? counters->wasm_decode_wasm_module_time()
                      : counters->wasm_decode_asm_module_time();
@@ -1420,7 +1406,6 @@ bool ModuleDecoder::ok() { return impl_->ok(); }
 ModuleResult SyncDecodeWasmModule(Isolate* isolate, const byte* module_start,
                                   const byte* module_end, bool verify_functions,
                                   ModuleOrigin origin) {
-   //DEBUGCOMMENT
   return DecodeWasmModule(isolate, module_start, module_end, verify_functions,
                           origin, isolate->counters());
 }
