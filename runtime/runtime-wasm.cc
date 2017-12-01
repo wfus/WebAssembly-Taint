@@ -364,7 +364,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
 	    std::cout << std::bitset<32>(taints[i]) << " ";
     } 
   
-    success = instance->debug_info()->RunInterpreter(frame_pointer, func_index, arg_buffer, taints);
+    success = instance->debug_info()->RunInterpreterTaint(frame_pointer, func_index, arg_buffer, taints);
     
   }
   else {
