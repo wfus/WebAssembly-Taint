@@ -2026,7 +2026,7 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
 // WFUEDIT...
 std::vector<Object*> ArgumentsAdaptorFrame::GetActualParameters() {
   
-  bool debug = true;
+  bool debug = false;
   int actual = ComputeParametersCount();
   int expected = -1;
   JSFunction* function = this->function();

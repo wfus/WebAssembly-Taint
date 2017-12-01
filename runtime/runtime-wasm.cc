@@ -261,14 +261,14 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
     frame_pointer = it.frame()->fp();
   }
 
-  /*
+  
   StackTraceFrameIterator it(isolate);
   for (int i = 0; !it.done(); it.Advance()) {
     if (it.is_javascript())  printf("[%d] JS Frame\n", i);
     else if (it.is_wasm())   printf("[%d] WASM Frame\n", i); 
     else                     printf("[%d] Arguments Adaptor Frame\n", i); 
     i++;
-  }*/
+  }
   // isolate->PrintStack(stdout);
 
   /* We will check for the existence of a ArgumentsAdaptorFrame, which
@@ -297,7 +297,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
  106   V(BUILTIN_EXIT, BuiltinExitFrame)
   */
 
- /*
+ 
  printf("=====================\n");
  printf("*CURRENT_FRAME_TRACE*\n");
  printf("=====================\n");
@@ -322,7 +322,7 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
         printf("TYPE->%u\n", frame->type()); 
     } 
   }
-  */
+  
 
   /* Basically, if we see a JS_TO_WASM and then a ARGUMENTS_ADAPTOR, 
    * we know that we've overloaded the shit out of our WASM function. 
