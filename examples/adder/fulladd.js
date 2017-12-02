@@ -19,6 +19,8 @@ const env = {
 };
 const importObject = {env};
 
+console.log("This is not good");
+
 const bytes = new Uint8Array(
 	[0,97,115,109,1,0,0,0,1,34,6,96,1,125,1,125,96,2,127,127,
 		1,127,96,2,125,125,1,125,96,2,124,124,1,124,96,1,127,1,127,96,
@@ -94,7 +96,6 @@ const bytes = new Uint8Array(
 /* Load in our wasm file and try to activate functions */
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;	
-	console.log(exports);
 	console.log(exports.test_I32Add(5, 2, 1923, 4389));
 	console.log(exports.test_I32Sub(4, 1, 3544, 1630));
 	console.log(exports.test_I32Mul(10, 7, 2911, 4710));
