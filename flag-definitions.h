@@ -549,11 +549,15 @@ DEFINE_BOOL(wasm_interpret_all, false,
             "Execute all wasm code in the wasm interpreter")
 DEFINE_BOOL(wasm_taint, false,
             "Runs interpreted wasm with taint tracking enabled. Does not use compiled wasm.")
+DEFINE_BOOL(wasm_taint_debug, false,
+            "Traces through and prints out logging for wasm_taint structures.")
 DEFINE_BOOL(asm_wasm_lazy_compilation, false,
             "enable lazy compilation for asm-wasm modules")
 DEFINE_IMPLICATION(validate_asm, asm_wasm_lazy_compilation)
 DEFINE_BOOL(wasm_lazy_compilation, false,
             "enable lazy compilation for all wasm modules")
+// wasm_taint_debug basically means wasm_taint with verbose mode
+DEFINE_IMPLICATION(wasm_taint_debug, wasm_taint)
 // wasm_taint only works with interpreted wasm. 
 DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all)
 // wasm-interpret-all resets {asm-,}wasm-lazy-compilation.
