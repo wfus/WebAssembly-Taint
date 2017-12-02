@@ -9,16 +9,16 @@ float = "float"
 double = "double"
 
 function_prefix = "test"
-print_prefix = "console.log("
+print_prefix = "print("
 
 def simple_binop_to_cpp(binop_triple):
-	name, ctype, op = binop_triple
-	func = "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
-	func += "\t return a {} b;\n".format(op)
-	func += "}\n"
-	func += "\n"
-	func += "\n"
-	return func
+    name, ctype, op = binop_triple
+    func = "{} {}_{}({} a, {} b) {{\n".format(ctype, function_prefix, name, ctype, ctype)
+    func += "\t return a {} b;\n".format(op)
+    func += "}\n"
+    func += "\n"
+    func += "\n"
+    return func
 
 def other_binop_to_cpp(binop_triple):
     name, ctype, op = binop_triple
@@ -39,22 +39,25 @@ def other_unop_to_cpp(binop_triple):
     return func
 
 def binop_to_javascript(binop_lst):
-	teststr = ""
-	INT_MAX = (1 << 31) - 1
-	for name, _, _ in binop_lst:
-		rand1 = random.randint(1, 10)
-		rand2 = random.randint(1, 10)
-		teststr += "{}exports.{}_{}".format(print_prefix, function_prefix, name)
-		teststr += "({}, {}));\n".format(rand1, rand2)
-	return teststr
+    teststr = ""
+    INT_MAX = (1 << 31) - 1
+    for name, _, _ in binop_lst:
+        rand1 = random.randint(1, 10)
+        rand2 = random.randint(1, 10)
+        rand3 = random.randint(1, 10000)
+        rand4 = random.randint(1, 10000)
+        teststr += "{}exports.{}_{}".format(print_prefix, function_prefix, name)
+        teststr += "({}, {}, {}, {}));\n".format(rand1, rand2, rand3, rand4)
+    return teststr
 
 def unop_to_javascript(binop_lst):
     teststr = ""
     INT_MAX = (1 << 31) - 1
     for name, _, _ in binop_lst:
-        rand = random.randint(1, 10)
+        rand1 = random.randint(1, 10)
+        rand2 = random.randint(1, 10000)
         teststr += "{}exports.{}_{}".format(print_prefix, function_prefix, name)
-        teststr += "({}));\n".format(rand)
+        teststr += "({}, {}));\n".format(rand1, rand2)
     return teststr
 
 
