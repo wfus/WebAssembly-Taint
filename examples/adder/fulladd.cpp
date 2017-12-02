@@ -369,3 +369,4 @@ float test_F32Sqrt(float a) {
 double test_F64Sqrt(double a) {
     return sqrt(a);
 }
+
