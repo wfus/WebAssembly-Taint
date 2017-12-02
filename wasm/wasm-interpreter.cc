@@ -2256,10 +2256,10 @@ class ThreadImpl {
   WasmValue Pop() {
     DCHECK_GT(frames_.size(), 0);
     DCHECK_GT(StackHeight(), frames_.back().llimit());  // can't pop into locals
-    uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
-    char buf[32];
-    sprintf(buf, "Popped: %x\n", peek);
-    log_string(buf);
+    // uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
+    // char buf[32];
+    // sprintf(buf, "Popped: %x\n", peek);
+    // log_string(buf);
     return *--sp_;
   }
 
@@ -2280,9 +2280,9 @@ class ThreadImpl {
   void Push(WasmValue val) {
     DCHECK_NE(kWasmStmt, val.type());
     DCHECK_LE(1, stack_limit_ - sp_);
-    char buf[32];
-    sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
-    log_string(buf);
+    // char buf[32];
+    // sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
+    // log_string(buf);
     *sp_++ = val;
   }
 

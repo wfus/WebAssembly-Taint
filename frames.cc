@@ -2010,7 +2010,7 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
     }
   }
  
-
+  /*
   std::cout << "[RETURNED PARAMETERS]" << std::endl;
   for (int i = 0; i < actual; i++) {
       Object* param = GetParameter(i);
@@ -2019,6 +2019,7 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
       if (param->IsHeapObject()) std::cout << "[HeapOBJ]";
       std::cout << std::endl;
   }
+  */
   
   return taints;
 }

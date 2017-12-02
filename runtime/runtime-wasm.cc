@@ -352,17 +352,20 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
 
   bool success;
   if (isOverloadingWithTaint) {
+      /*
     int expected = arg_adapt_frame->ExpectedParameters(); 
     int actual = arg_adapt_frame->ActualParameters(); 
-    printf("[TAINTED] Overloaded with %d args when expecting %d |=| \n", actual, expected);
+    // printf("[TAINTED] Overloaded with %d args when expecting %d |=| \n", actual, expected);
     assert(actual > expected);
+       */
     // We will take up to 2*expected parameters as taint, stored in a taintarray
     std::vector<taint_t> taints = arg_adapt_frame->GetStrippedTaints();;
-    
+    /*
     std::cout<< "Taints: ";
     for (unsigned long i = 0; i < taints.size(); i++) {
 	    std::cout << std::bitset<32>(taints[i]) << " ";
     } 
+    */
   
     success = instance->debug_info()->RunInterpreterTaint(frame_pointer, func_index, arg_buffer, taints);
     
