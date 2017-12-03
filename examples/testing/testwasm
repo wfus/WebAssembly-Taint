@@ -2,7 +2,7 @@
 
 D8BIN=" ../../../out.gn/x64.release/d8 ";
 TESTFILE1=" ../adder/fulladd_d8.js ";
-D8FLAGS=" --wasm_interpret_all
+D8FLAGS=" --wasm_taint --taint_log="/tmp/wasm.log"
 ";
 
 $D8BIN $D8FLAGS $TESTFILE1

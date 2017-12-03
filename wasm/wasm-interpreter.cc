@@ -38,9 +38,17 @@
 #define TAINT_MEDICAL   0x40
 #define TAINT_OTHER     0x80
 
-#define DEBUGGING_DIR "/tmp/wasm.log"
-#define STRING(s) #s
+#define TAINTLOG(s)                   \
+if (FLAG_taint_log == nullptr) {      \
+    std::cout << s;                   \
+} else {                              \
+    std::ofstream logger;             \
+    logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
+    logger << s;                      \
+    logger.close();                   \
+}
 
+#define STRING(s) #s
 
 
 namespace v8 {
@@ -50,64 +58,26 @@ namespace wasm {
     static void print_bytes_of_object(WasmValue *wasm, const char *wtype) {
         char buf[32];
         sprintf(buf, "[ %x | %.2X ]", wasm->to<uint32_t>(), wasm->getTaint());
-        std::ofstream logger;
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << buf;
-        logger.close();
+        TAINTLOG(buf);
     }
     
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
-        std::ofstream logger;
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger <<"["<<wop<<" "<<wtype<<"]: ";
-        logger.close();
-        
+        TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&l, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ";
-        logger.close();
-        
+        TAINTLOG(" ");
         print_bytes_of_object(&r, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ==> ";
-        logger.close();
-        
+        TAINTLOG(" ==> ");
         print_bytes_of_object(&res, wtype);
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << std::endl;
-        logger.close();
+        TAINTLOG(std::endl);
     }
     
     
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
-        std::ofstream logger;
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger <<"["<<wop<<" "<<wtype<<"]: ";
-        logger.close();
-        
+        TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&v, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ==> ";
-        logger.close();
-        
+        TAINTLOG(" ==> ");
         print_bytes_of_object(&res, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << std::endl;
-        logger.close();
-    }
-    
-    
-    static void log_string(const char* str) {
-        std::ofstream logger;
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << str;
-        logger.close();
+        TAINTLOG(std::endl);
     }
     
 #if DEBUG
@@ -1494,7 +1464,7 @@ class ThreadImpl {
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
       
-    log_string("RETURN TRAP: ");
+    TAINTLOG("RETURN: ");
 
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
@@ -1503,7 +1473,7 @@ class ThreadImpl {
       TRACE("  => finish\n");
       
       print_bytes_of_object(sp_dest, "RET");
-      log_string("\n");
+      TAINTLOG("\n");
     
       return false;
     } else {
@@ -1520,7 +1490,7 @@ class ThreadImpl {
       char buf[64];
       sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
               (*code)->function->func_index, *pc);
-      log_string(buf);
+      TAINTLOG(buf);
 
       return true;
     }
@@ -2259,7 +2229,7 @@ class ThreadImpl {
     // uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
     // char buf[32];
     // sprintf(buf, "Popped: %x\n", peek);
-    // log_string(buf);
+    // LOG(buf);
     return *--sp_;
   }
 
@@ -2282,7 +2252,7 @@ class ThreadImpl {
     DCHECK_LE(1, stack_limit_ - sp_);
     // char buf[32];
     // sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
-    // log_string(buf);
+    // LOG(buf);
     *sp_++ = val;
   }
 
