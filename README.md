@@ -80,7 +80,11 @@ The upside of having taints passed in as extra variables to the signature is tha
 
 
 
+## Contributing/Authors
 
+This taint tracking repository was made by (Raymond Lin)[https://www.github.com/raylin1000], [Daniel Inge](https://www.github.com/daninge98), and [William Fu](https://www.github.com/wfus) for Harvard's CS263, System Security. If there are any issues, please submit an issue on Github or fork this repository!
+
+   
 
 
 
