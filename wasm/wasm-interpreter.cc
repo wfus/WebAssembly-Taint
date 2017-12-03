@@ -38,14 +38,16 @@
 #define TAINT_MEDICAL   0x40
 #define TAINT_OTHER     0x80
 
-#define TAINTLOG(s)                   \
-if (FLAG_taint_log == nullptr) {      \
-    std::cout << s;                   \
-} else {                              \
-    std::ofstream logger;             \
-    logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
-    logger << s;                      \
-    logger.close();                   \
+#define TAINTLOG(s)                       \
+if (FLAG_wasm_taint) {                    \
+    if (FLAG_taint_log == nullptr) {      \
+        std::cout << s;                   \
+    } else {                              \
+        std::ofstream logger;             \
+        logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
+        logger << s;                      \
+        logger.close();                   \
+    }                                     \
 }
 
 #define STRING(s) #s
@@ -55,28 +57,43 @@ namespace v8 {
 namespace internal {
 namespace wasm {
 
-    static void print_bytes_of_object(WasmValue *wasm, const char *wtype) {
+    static void print_bytes_of_object(WasmValue *wasm) {
         char buf[32];
-        sprintf(buf, "[ %x | %.2X ]", wasm->to<uint32_t>(), wasm->getTaint());
+        switch(wasm->type()) {
+            case kWasmI32:
+                sprintf(buf, "[ %d | %.2X ]", wasm->to<int32_t>(), wasm->getTaint());
+                break;
+            case kWasmI64:
+                sprintf(buf, "[ %lld | %.2X ]", wasm->to<int64_t>(), wasm->getTaint());
+                break;
+            case kWasmF32:
+                sprintf(buf, "[ %f | %.2X ]", wasm->to<float>(), wasm->getTaint());
+                break;
+            case kWasmF64:
+                sprintf(buf, "[ %f | %.2X ]", wasm->to<double>(), wasm->getTaint());
+                break;
+            default:
+                break;
+        }
         TAINTLOG(buf);
     }
     
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
-        print_bytes_of_object(&l, wtype);
+        print_bytes_of_object(&l);
         TAINTLOG(" ");
-        print_bytes_of_object(&r, wtype);
+        print_bytes_of_object(&r);
         TAINTLOG(" ==> ");
-        print_bytes_of_object(&res, wtype);
+        print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
     
     
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
-        print_bytes_of_object(&v, wtype);
+        print_bytes_of_object(&v);
         TAINTLOG(" ==> ");
-        print_bytes_of_object(&res, wtype);
+        print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
     
@@ -1465,6 +1482,8 @@ class ThreadImpl {
     frames_.pop_back();
       
     TAINTLOG("RETURN: ");
+    print_bytes_of_object(sp_dest);
+    TAINTLOG(std::endl);
 
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
@@ -1472,9 +1491,14 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      print_bytes_of_object(sp_dest, "RET");
-      TAINTLOG("\n");
-    
+      TAINTLOG("Finished executing function ");
+      TAINTLOG((*code)->function->func_index);
+      TAINTLOG("\n\n");
+        
+      if ((sp_dest->getTaint() & FLAG_taint_kill) != 0 ) {
+          exit(1);
+      }
+          
       return false;
     } else {
       // Return to caller frame.
@@ -1486,12 +1510,11 @@ class ThreadImpl {
       TRACE("  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
-        
-      char buf[64];
-      sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
-              (*code)->function->func_index, *pc);
-      TAINTLOG(buf);
-
+    
+      TAINTLOG("Returning to function ");
+      TAINTLOG((*code)->function->func_index);
+      TAINTLOG(std::endl);
+      
       return true;
     }
   }
@@ -1500,6 +1523,9 @@ class ThreadImpl {
   // and the current activation was fully unwound.
   bool DoCall(Decoder* decoder, InterpreterCode* target, pc_t* pc,
               pc_t* limit) WARN_UNUSED_RESULT {
+    TAINTLOG("Calling function ");
+    TAINTLOG(target->function->func_index);
+    TAINTLOG(std::endl);
     frames_.back().pc = *pc;
     PushFrame(target);
     if (!DoStackCheck()) return false;

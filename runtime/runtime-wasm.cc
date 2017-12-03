@@ -366,13 +366,11 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
 	    std::cout << std::bitset<32>(taints[i]) << " ";
     } 
     */
-      printf("FUNCTION INDEX: %u\n", func_index);
     success = instance->debug_info()->RunInterpreterTaint(frame_pointer, func_index, arg_buffer, taints);
     
   }
   else {
-    success = instance->debug_info()->RunInterpreter(frame_pointer,
-                                                        func_index, arg_buffer);
+    success = instance->debug_info()->RunInterpreter(frame_pointer, func_index, arg_buffer);
   }
   if (!success) {
     DCHECK(isolate->has_pending_exception());
