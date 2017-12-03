@@ -61,13 +61,22 @@ If a WasmValue with any taint tag set returns to the JavaScript context, the Jav
 
 
 
-## Taint Modifications
+## Modifying your Source Code 
 
-In order to input taint into the source code, we implement function overloading as a way to enter in taint. For example, if we have a sample WASM function
+In order to input taint into the source code, we implement function overloading as a way to enter in taint. For example, if we have a sample WASM function ```myfunction = exports._wasm_function``` with three integer parameters A, B, C,  
 
 ```
+// Inputs three args with taints of 0x00000000
+var out = myfunction(50, 100, 200);
 
+// Input 50 has taint 0x000000f0, others have 0x00000000
+var out = myfunction(50, 100, 200, 0x000000f0);
+
+// The extra taint of 0x8 is thrown away, since more taints than params
+var out = myfunction(1, 2, 3, 0x1, 0x2, 0x4, 0x8);
 ``` 
+
+The upside of having taints passed in as extra variables to the signature is that the default version of V8 throws away the extra parameters. Therefore, you can test/run your taint modified scripts in both this custom V8 as well as regular V8.  
 
 
 
