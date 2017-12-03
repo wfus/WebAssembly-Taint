@@ -38,76 +38,63 @@
 #define TAINT_MEDICAL   0x40
 #define TAINT_OTHER     0x80
 
-#define DEBUGGING_DIR "/tmp/wasm.log"
-#define STRING(s) #s
+#define TAINTLOG(s)                       \
+if (FLAG_wasm_taint) {                    \
+    if (FLAG_taint_log == nullptr) {      \
+        std::cout << s;                   \
+    } else {                              \
+        std::ofstream logger;             \
+        logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
+        logger << s;                      \
+        logger.close();                   \
+    }                                     \
+}
 
+#define STRING(s) #s
 
 
 namespace v8 {
 namespace internal {
 namespace wasm {
 
-    static void print_bytes_of_object(WasmValue *wasm, const char *wtype) {
+    static void print_bytes_of_object(WasmValue *wasm) {
         char buf[32];
-        sprintf(buf, "[ %x | %.2X ]", wasm->to<uint32_t>(), wasm->getTaint());
-        std::ofstream logger;
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << buf;
-        logger.close();
+        switch(wasm->type()) {
+            case kWasmI32:
+                sprintf(buf, "[ %d | %.2X ]", wasm->to<int32_t>(), wasm->getTaint());
+                break;
+            case kWasmI64:
+                sprintf(buf, "[ %lld | %.2X ]", wasm->to<int64_t>(), wasm->getTaint());
+                break;
+            case kWasmF32:
+                sprintf(buf, "[ %f | %.2X ]", wasm->to<float>(), wasm->getTaint());
+                break;
+            case kWasmF64:
+                sprintf(buf, "[ %f | %.2X ]", wasm->to<double>(), wasm->getTaint());
+                break;
+            default:
+                break;
+        }
+        TAINTLOG(buf);
     }
     
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
-        std::ofstream logger;
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger <<"["<<wop<<" "<<wtype<<"]: ";
-        logger.close();
-        
-        print_bytes_of_object(&l, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ";
-        logger.close();
-        
-        print_bytes_of_object(&r, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ==> ";
-        logger.close();
-        
-        print_bytes_of_object(&res, wtype);
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << std::endl;
-        logger.close();
+        TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
+        print_bytes_of_object(&l);
+        TAINTLOG(" ");
+        print_bytes_of_object(&r);
+        TAINTLOG(" ==> ");
+        print_bytes_of_object(&res);
+        TAINTLOG(std::endl);
     }
     
     
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
-        std::ofstream logger;
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger <<"["<<wop<<" "<<wtype<<"]: ";
-        logger.close();
-        
-        print_bytes_of_object(&v, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << " ==> ";
-        logger.close();
-        
-        print_bytes_of_object(&res, wtype);
-        
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << std::endl;
-        logger.close();
-    }
-    
-    
-    static void log_string(const char* str) {
-        std::ofstream logger;
-        logger.open(DEBUGGING_DIR, std::ios::app | std::ios::out);
-        logger << str;
-        logger.close();
+        TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
+        print_bytes_of_object(&v);
+        TAINTLOG(" ==> ");
+        print_bytes_of_object(&res);
+        TAINTLOG(std::endl);
     }
     
 #if DEBUG
@@ -1494,7 +1481,9 @@ class ThreadImpl {
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
       
-    log_string("RETURN TRAP: ");
+    TAINTLOG("RETURN: ");
+    print_bytes_of_object(sp_dest);
+    TAINTLOG(std::endl);
 
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
@@ -1502,9 +1491,14 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      print_bytes_of_object(sp_dest, "RET");
-      log_string("\n");
-    
+      TAINTLOG("Finished executing function ");
+      TAINTLOG((*code)->function->func_index);
+      TAINTLOG("\n\n");
+        
+      if ((sp_dest->getTaint() & FLAG_taint_kill) != 0 ) {
+          exit(1);
+      }
+          
       return false;
     } else {
       // Return to caller frame.
@@ -1516,12 +1510,11 @@ class ThreadImpl {
       TRACE("  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
-        
-      char buf[64];
-      sprintf(buf, "  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
-              (*code)->function->func_index, *pc);
-      log_string(buf);
-
+    
+      TAINTLOG("Returning to function ");
+      TAINTLOG((*code)->function->func_index);
+      TAINTLOG(std::endl);
+      
       return true;
     }
   }
@@ -1530,6 +1523,9 @@ class ThreadImpl {
   // and the current activation was fully unwound.
   bool DoCall(Decoder* decoder, InterpreterCode* target, pc_t* pc,
               pc_t* limit) WARN_UNUSED_RESULT {
+    TAINTLOG("Calling function ");
+    TAINTLOG(target->function->func_index);
+    TAINTLOG(std::endl);
     frames_.back().pc = *pc;
     PushFrame(target);
     if (!DoStackCheck()) return false;
@@ -2259,7 +2255,7 @@ class ThreadImpl {
     // uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
     // char buf[32];
     // sprintf(buf, "Popped: %x\n", peek);
-    // log_string(buf);
+    // LOG(buf);
     return *--sp_;
   }
 
@@ -2282,7 +2278,7 @@ class ThreadImpl {
     DCHECK_LE(1, stack_limit_ - sp_);
     // char buf[32];
     // sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
-    // log_string(buf);
+    // LOG(buf);
     *sp_++ = val;
   }
 

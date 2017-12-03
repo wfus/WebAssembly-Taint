@@ -549,6 +549,13 @@ DEFINE_BOOL(wasm_interpret_all, false,
             "Execute all wasm code in the wasm interpreter")
 DEFINE_BOOL(wasm_taint, false,
             "Runs interpreted wasm with taint tracking enabled. Does not use compiled wasm.")
+DEFINE_INT(taint_kill, 0,
+           "Kill process if specified taint gets passed out of function "
+           "(by default, don't kill on taint)")
+DEFINE_STRING(taint_log, nullptr,
+              "the file to which the taint log is written "
+              "written (by default, the log is not written anywhere;"
+              "if taint tracking is activated, the log is written to stdout)")
 DEFINE_BOOL(wasm_taint_debug, false,
             "Traces through and prints out logging for wasm_taint structures.")
 DEFINE_BOOL(asm_wasm_lazy_compilation, false,
