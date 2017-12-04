@@ -8,6 +8,16 @@
 #include "src/wasm/wasm-opcodes.h"
 #include "src/wasm/wasm-value.h"
 #include "src/zone/zone-containers.h"
+#include <iostream>
+#include <fstream>
+
+#define TAINTLOG(s)                                             \
+if (FLAG_wasm_taint && FLAG_taint_log != nullptr) {             \
+    std::ofstream logger;                                       \
+    logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
+    logger << s;                                                \
+    logger.close();                                             \
+}
 
 namespace v8 {
 namespace base {
@@ -19,7 +29,30 @@ class WasmInstanceObject;
 struct WasmContext;
 
 namespace wasm {
-
+    
+inline static void print_bytes_of_object(WasmValue *wasm) {
+    TAINTLOG("[ ");
+    switch(wasm->type()) {
+        case kWasmI32:
+            TAINTLOG(wasm->to<int32_t>());
+            break;
+        case kWasmI64:
+            TAINTLOG(wasm->to<int64_t>());
+            break;
+        case kWasmF32:
+            TAINTLOG(wasm->to<float>());
+            break;
+        case kWasmF64:
+            TAINTLOG(wasm->to<double>());
+            break;
+        default:
+            break;
+    }
+    TAINTLOG(" | ");
+    TAINTLOG(std::hex << wasm->getTaint());
+    TAINTLOG(" ]");
+}
+    
 // forward declarations.
 struct ModuleWireBytes;
 struct WasmFunction;

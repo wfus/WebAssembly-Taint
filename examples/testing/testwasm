@@ -2,6 +2,6 @@
 
 D8BIN=" ../../../out.gn/x64.release/d8 ";
 TESTFILE1=" ../adder/simpleadd_d8.js ";
-D8FLAGS=" --wasm_taint --taint_kill=2 --taint_log="/tmp/wasm.log"";
+D8FLAGS=" --wasm_taint --taint_random=24 --taint_log="/tmp/wasm.log"";
 
 $D8BIN $D8FLAGS $TESTFILE1
