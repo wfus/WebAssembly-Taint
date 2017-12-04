@@ -21,6 +21,8 @@ This should store
 
 ## Usage
 
+Since our flags are integrated into V8, you can view all of our flags and usage documentation with V8's built in debug shell ```./d8 --help```. However, since that shows all possible flags, we list the flags we have added to V8 below. .  
+
 ### Starting V8 in Taint Mode
 Using taint tracking with V8 and Chromium should be similar. First, to enable taint tracking, use the ```--wasm_taint``` V8 flag, which should automatically start V8 or Chromium in interpreted WASM mode.  
 
@@ -38,11 +40,14 @@ out.gn/x64.debug/d8 --wasm_taint example.js
 
 For NodeJS
 ```
-node --js-flags="--wasm_taint"
+node --v8-options="--wasm_taint"
 ```
 
 ### Logging
-
+```
+--taint_log <outdir> [default: no logging]
+	Output file for logging purposes. If no argument is given, does not log. 
+```
 
 ### Taint Options
 Taint is currently implemented as a ```uint32_t```, or 32 bits that represent 32 unique taint tags. However, this can be easily changed by going into the ```src/frames.h``` and changing ```typedef uint32_t taint_t``` to ```typedef <YOUR_TYPE> taint_t```. 
@@ -50,13 +55,25 @@ Taint is currently implemented as a ```uint32_t```, or 32 bits that represent 32
 If a WasmValue with any taint tag set returns to the JavaScript context, the JavaScript process will throw an error and exit. If you don't want the program to exit, but rather log, if certain taint tags are present, then set the flag ```wasm_kill```. 
 
 ```
---wasm_kill <input> [default: 0xffffffff]
+--taint_kill<input> [default: 0x00000000]
 	Computes taint OR input when returning from WebAssmeblyInterpreter to 
 	JavaScript. Kills and throws an exception if the OR is nonzero. 
 	Default option basically kills if ANY taint is returned.
 ```
 
+### Taint Explosion + Probabilistic Taint
+We have a prototype option enabled for probabilistic taint. This takes in the parameters ```--taint_random```, which propagates specific taints with user-specified probablities. We use this as testing to avoid taint explosion for non-sensitive taint labels. We store the probability p that we *don't* propagate the taint value. For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variable has had with certain non-sensitive information sources.  
 
+```
+--taint_random <num_bits> [default: 0]
+	Specifies the number of bits used to hold a probability p of propagation.
+	The default, 0, means that probabilistic taint propagation is disabled. 
+	Probabilities are stored as integers in <num_bits> most significant bits
+	of the taint input, as an integer. 
+		(p = taint >> (sizeof(taint_t)-<num_bits>)/(1 << <num_bits>))
+	The taints will therefore only be the lower (sizeof(taint_t) - <num_bits>)
+	bits, decreasing the total taint resolution. Taints will be passed in normally.  
+```
 
 
 
