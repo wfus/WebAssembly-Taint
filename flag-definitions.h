@@ -554,8 +554,11 @@ DEFINE_INT(taint_kill, 0,
            "(by default, don't kill on taint)")
 DEFINE_STRING(taint_log, nullptr,
               "the file to which the taint log is written "
-              "written (by default, the log is not written anywhere;"
-              "if taint tracking is activated, the log is written to stdout)")
+              "written (by default, the log is not written anywhere)")
+DEFINE_INT(taint_random, 0,
+           "Setting this to a non-zero value makes taint tracking probabilistic."
+           "The value is the number of high order bits of the taint dedicated to the probability "
+           "that the taint is not propagated.")
 DEFINE_BOOL(wasm_taint_debug, false,
             "Traces through and prints out logging for wasm_taint structures.")
 DEFINE_BOOL(asm_wasm_lazy_compilation, false,

@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <type_traits>
+#include <stdlib.h>
 
 #include "src/wasm/wasm-interpreter.h"
 
@@ -15,6 +16,7 @@
 #include "src/objects-inl.h"
 #include "src/utils.h"
 #include "src/wasm/decoder.h"
+#include "src/frames.h"
 #include "src/wasm/function-body-decoder-impl.h"
 #include "src/wasm/function-body-decoder.h"
 #include "src/wasm/memory-tracing.h"
@@ -28,56 +30,15 @@
 
 #include <iostream>
 #include <fstream>
-
-#define TAINT_EMAIL     0x1
-#define TAINT_CCINFO    0x2
-#define TAINT_PASSWORD  0x4
-#define TAINT_SWAP      0x8
-#define TAINT_TEMP      0x10
-#define TAINT_DRUGS     0x20
-#define TAINT_MEDICAL   0x40
-#define TAINT_OTHER     0x80
-
-#define TAINTLOG(s)                       \
-if (FLAG_wasm_taint) {                    \
-    if (FLAG_taint_log == nullptr) {      \
-        std::cout << s;                   \
-    } else {                              \
-        std::ofstream logger;             \
-        logger.open(FLAG_taint_log, std::ios::app | std::ios::out); \
-        logger << s;                      \
-        logger.close();                   \
-    }                                     \
-}
+#include <bitset>
 
 #define STRING(s) #s
-
+#define PROBSHIFT (8 * sizeof(taint_t) - FLAG_taint_random)
 
 namespace v8 {
 namespace internal {
 namespace wasm {
-
-    static void print_bytes_of_object(WasmValue *wasm) {
-        char buf[32];
-        switch(wasm->type()) {
-            case kWasmI32:
-                sprintf(buf, "[ %d | %.2X ]", wasm->to<int32_t>(), wasm->getTaint());
-                break;
-            case kWasmI64:
-                sprintf(buf, "[ %lld | %.2X ]", wasm->to<int64_t>(), wasm->getTaint());
-                break;
-            case kWasmF32:
-                sprintf(buf, "[ %f | %.2X ]", wasm->to<float>(), wasm->getTaint());
-                break;
-            case kWasmF64:
-                sprintf(buf, "[ %f | %.2X ]", wasm->to<double>(), wasm->getTaint());
-                break;
-            default:
-                break;
-        }
-        TAINTLOG(buf);
-    }
-    
+    /*
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&l);
@@ -87,8 +48,8 @@ namespace wasm {
         print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
-    
-    
+    */
+    /*
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&v);
@@ -96,7 +57,7 @@ namespace wasm {
         print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
-    
+    */
 #if DEBUG
 #define TRACE(...)                                        \
   do {                                                    \
@@ -1481,9 +1442,7 @@ class ThreadImpl {
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
       
-    TAINTLOG("RETURN: ");
-    print_bytes_of_object(sp_dest);
-    TAINTLOG(std::endl);
+    TAINTLOG("RESULT: ");
 
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
@@ -1491,7 +1450,8 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      TAINTLOG("Finished executing function ");
+      print_bytes_of_object(sp_dest);
+      TAINTLOG("\nFinished executing function ");
       TAINTLOG((*code)->function->func_index);
       TAINTLOG("\n\n");
         
@@ -1510,8 +1470,9 @@ class ThreadImpl {
       TRACE("  => Return to #%zu (#%u @%zu)\n", frames_.size() - 1,
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
-    
-      TAINTLOG("Returning to function ");
+      
+      print_bytes_of_object(sp_dest);
+      TAINTLOG("\nReturning to function ");
       TAINTLOG((*code)->function->func_index);
       TAINTLOG(std::endl);
       
@@ -2177,9 +2138,24 @@ class ThreadImpl {
         STRING(op) == "^" ||                                 \
         STRING(op) == "|" ||                                 \
         STRING(op) == "&") {                                 \
-      res.setTaint(rval.getTaint() | lval.getTaint());       \
+      taint_t ltaint = lval.getTaint();                      \
+      taint_t rtaint = rval.getTaint();                      \
+      taint_t prob = 0;                                      \
+      if (FLAG_taint_random != 0) {                          \
+        taint_t lprob = ltaint >> PROBSHIFT;                 \
+        taint_t rprob = rtaint >> PROBSHIFT;                 \
+        ltaint = ltaint % (1 << PROBSHIFT);                  \
+        rtaint = rtaint % (1 << PROBSHIFT);                  \
+        if (rand() % (1 << FLAG_taint_random) < lprob) {     \
+            ltaint = 0;                                      \
+        }                                                    \
+        if (rand() % (1 << FLAG_taint_random) < rprob) {     \
+            rtaint = 0;                                      \
+        }                                                    \
+        prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
+      }                                                      \
+      res.setTaint(ltaint | rtaint | prob);                  \
     }                                                        \
-    log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
     Push(res);                                               \
     break;                                                   \
 }
@@ -2192,12 +2168,27 @@ class ThreadImpl {
     TrapReason trap = kTrapCount;                           \
     WasmValue rval = Pop();                                 \
     WasmValue lval = Pop();                                 \
-    auto result = Execute##name(lval.to<ctype>(), rval.to<ctype>(), &trap);\
+    auto result = Execute##name(lval.to<ctype>(), rval.to<ctype>(), &trap); \
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
     WasmValue res = WasmValue(result);                      \
-    res.setTaint(rval.getTaint() | lval.getTaint());        \
-    log_binop(lval, rval, res, STRING(ctype), STRING(name));\
+    taint_t ltaint = lval.getTaint();                       \
+    taint_t rtaint = rval.getTaint();                       \
+    taint_t prob = 0;                                       \
+    if (FLAG_taint_random != 0) {                           \
+        taint_t lprob = ltaint >> PROBSHIFT;                \
+        taint_t rprob = rtaint >> PROBSHIFT;                \
+        ltaint = ltaint % (1 << PROBSHIFT);                 \
+        rtaint = rtaint % (1 << PROBSHIFT);                 \
+        if (rand() % (1 << FLAG_taint_random) < lprob) {    \
+            ltaint = 0;                                     \
+        }                                                   \
+        if (rand() % (1 << FLAG_taint_random) < rprob) {    \
+            rtaint = 0;                                     \
+        }                                                   \
+        prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
+    }                                                       \
+    res.setTaint(ltaint | rtaint | prob);                   \
     Push(res);                                              \
     break;                                                  \
   }
@@ -2212,8 +2203,17 @@ class ThreadImpl {
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
     WasmValue res = WasmValue(result);                      \
-    res.setTaint(val.getTaint());                           \
-    log_unop(val, res, STRING(ctype), STRING(name));        \
+    taint_t taint = val.getTaint();                         \
+    taint_t prob = 0;                                       \
+    if (FLAG_taint_random != 0) {                           \
+        prob = taint >> PROBSHIFT;                          \
+        taint = taint % (1 << PROBSHIFT);                   \
+        if (rand() % (1 << FLAG_taint_random) < prob) {     \
+            taint = 0;                                      \
+        }                                                   \
+        prob = prob << PROBSHIFT;                           \
+    }                                                       \
+    res.setTaint(taint | prob);                             \
     Push(res);                                              \
     break;                                                  \
   }
@@ -2252,10 +2252,6 @@ class ThreadImpl {
   WasmValue Pop() {
     DCHECK_GT(frames_.size(), 0);
     DCHECK_GT(StackHeight(), frames_.back().llimit());  // can't pop into locals
-    // uint32_t peek = (*(sp_ - 1)).to<uint32_t>();
-    // char buf[32];
-    // sprintf(buf, "Popped: %x\n", peek);
-    // LOG(buf);
     return *--sp_;
   }
 
@@ -2276,9 +2272,6 @@ class ThreadImpl {
   void Push(WasmValue val) {
     DCHECK_NE(kWasmStmt, val.type());
     DCHECK_LE(1, stack_limit_ - sp_);
-    // char buf[32];
-    // sprintf(buf, "Pushed: %x\n", val.to<uint32_t>());
-    // LOG(buf);
     *sp_++ = val;
   }
 

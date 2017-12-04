@@ -23,6 +23,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
 
 #define STRING(s) #s
 
@@ -328,6 +331,10 @@ RUNTIME_FUNCTION(Runtime_WasmRunInterpreter) {
    * we know that we've overloaded the shit out of our WASM function. 
    * Let's look for this boys. 
    */
+  
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  srand(static_cast<uint32_t>(t.tv_usec * t.tv_sec));
   
   bool isOverloadingWithTaint = false;
   bool previousWasJStoWASM = false;

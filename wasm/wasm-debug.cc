@@ -175,6 +175,7 @@ class InterpreterHandle {
     int num_params = static_cast<int>(sig->parameter_count());
     ScopedVector<WasmValue> wasm_args(num_params);
     uint8_t* arg_buf_ptr = arg_buffer;
+    
     for (int i = 0; i < num_params; ++i) {
       uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
 #define CASE_ARG_TYPE(type, ctype)                                    \
@@ -271,6 +272,8 @@ class InterpreterHandle {
         int num_params = static_cast<int>(sig->parameter_count());
         ScopedVector<WasmValue> wasm_args(num_params);
         uint8_t* arg_buf_ptr = arg_buffer;
+      
+        TAINTLOG("INPUTS: ");
         for (int i = 0; i < num_params; ++i) {
             uint32_t param_size = 1 << ElementSizeLog2Of(sig->GetParam(i));
 #define CASE_ARG_TYPE(type, ctype)                                    \
@@ -288,8 +291,11 @@ break;
                 default:
                     UNREACHABLE();
             }
+            print_bytes_of_object(&(wasm_args[i]));
+            TAINTLOG("\t");
             arg_buf_ptr += param_size;
         }
+        TAINTLOG("\n");
         
         uint32_t activation_id = StartActivation(frame_pointer);
         
