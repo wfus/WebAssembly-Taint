@@ -95,7 +95,7 @@ therudeboys.sendKey(sekritkey, r00db0y35NetMsg, key_t+key_prob, msg_t+msg_prob);
 
 bash
 ```
-./d8 --wasm\_taint --taint\_random 8 nefariouscall.js 
+./d8 --wasm_taint --taint_random 8 nefariouscall.js 
 ```
 
 
