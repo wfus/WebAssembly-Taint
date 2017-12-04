@@ -62,7 +62,7 @@ If a WasmValue with any taint tag set returns to the JavaScript context, the Jav
 ```
 
 ### Taint Explosion + Probabilistic Taint
-We have a prototype option enabled for probabilistic taint. This takes in the parameters ```--taint_random```, which propagates specific taints with user-specified probablities. We use this as testing to avoid taint explosion for non-sensitive taint labels. We store the probability p that we *don't* propagate the taint value. For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variable has had with certain non-sensitive information sources.  
+We have a prototype option enabled for probabilistic taint. This takes in the parameters ```--taint_random```, which propagates specific taints with user-specified probablities. We use this as testing to avoid taint explosion for non-sensitive taint labels. We store the probability p that we *don't* propagate the taint value. 
 
 ```
 --taint_random <num_bits> [default: 0]
@@ -73,6 +73,29 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 		(p = taint >> (sizeof(taint_t)-<num_bits>)/(1 << <num_bits>))
 	The taints will therefore only be the lower (sizeof(taint_t) - <num_bits>)
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
+```
+
+For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variable has had with certain non-sensitive information sources. For example
+
+
+nefariouscall.js
+```
+var sekritkey = 13371337;
+var r00db0y35NetMsg = 100291239123;
+
+// Let's use the top 8 bits for probability (will pass as flag to d8/chromium/node)
+var key_t = TAINT_KEY; 
+var key_prob = 0 << (32 - 8);   // p=0, always propagate
+
+var msg_t = TAINT_NETMSG;
+var msg_prob = 250 << (32 - 8); // p=250/256, 6/256 chance of propagating
+
+therudeboys.sendKey(sekritkey, r00db0y35NetMsg, key_t+key_prob, msg_t+msg_prob); 
+```
+
+bash
+```
+./d8 --wasm\_taint --taint\_random 8 nefariouscall.js 
 ```
 
 
