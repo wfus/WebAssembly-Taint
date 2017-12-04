@@ -2,7 +2,9 @@
 
 ## Installation
 
-This is a modification to the src files of the [V8 JavaScript Engine](https://www.github.com/v8/v8.git) that is used in Google Chrome, Chromium, NodeJS, etc. To prevent conflicts, this modification should be used on the the stable releases ```chromium/3270``` in the V8 repository and ```64.0.3270.2``` for chromium. To build, first fetch V8 using google's depot_tools. 
+This is a modification to the src files of the [V8 JavaScript Engine](https://www.github.com/v8/v8.git) that is used in Google Chrome, Chromium, NodeJS, etc. To prevent conflicts, this modification should be used on the the stable releases ```chromium/3270``` in the V8 repository and ```64.0.3270.2``` for chromium. 
+
+To build, first fetch V8 using Google's depot_tools and reset the version to ```chromium/3270```. Then, replace the '''src''' folder with this repository, and build V8. The commands for performing a build are included below.
 
 ```
 fetch v8
@@ -10,18 +12,13 @@ cd v8
 git checkout chromium/3270
 rm -rf src/
 git clone https://www.github.com/wfus/WebAssembly-Taint src
-
-
-# Build V8, preferably with the debug build
-tools/dev/v8gen.py x64.debug
-ninja -C out.gn/x64.debug -j4
+tools/dev/v8gen.py x64.release
+ninja -C out.gn/x64.release -j72
 ```
-
-This should store 
 
 ## Usage
 
-Since our flags are integrated into V8, you can view all of our flags and usage documentation with V8's built in debug shell ```./d8 --help```. However, since that shows all possible flags, we list the flags we have added to V8 below. .  
+Since our flags are integrated into V8, you can view all of our flags and usage documentation with V8's built in debug shell ```./d8 --help```. However, since that shows all possible flags, we list the flags we have added to V8 below.  
 
 ### Starting V8 in Taint Mode
 Using taint tracking with V8 and Chromium should be similar. First, to enable taint tracking, use the ```--wasm_taint``` V8 flag, which should automatically start V8 or Chromium in interpreted WASM mode.  
@@ -45,7 +42,7 @@ node --v8-options="--wasm_taint"
 
 ### Logging
 ```
---taint_log <outdir> [default: no logging]
+--taint_log=<outdir> [default: no logging]
 	Output file for logging purposes. If no argument is given, does not log. 
 ```
 
@@ -55,22 +52,22 @@ Taint is currently implemented as a ```uint32_t```, or 32 bits that represent 32
 If a WasmValue with any taint tag set returns to the JavaScript context, the JavaScript process will throw an error and exit. If you don't want the program to exit, but rather log, if certain taint tags are present, then set the flag ```wasm_kill```. 
 
 ```
---taint_kill<input> [default: 0x00000000]
-	Computes taint OR input when returning from WebAssmeblyInterpreter to 
-	JavaScript. Kills and throws an exception if the OR is nonzero. 
-	Default option basically kills if ANY taint is returned.
+--taint_kill=<input> [default: 0x00000000]
+	Terminates execution if result returned from WebAssembly interpreter to 
+	Javascript contains any of the taints specified in <input> (if r is result,
+	kills if (r & <input>) is non-zero). Default option does not ever kill.
 ```
 
-### Taint Explosion + Probabilistic Taint
+### Taint Explosion and Probabilistic Taint
 We have a prototype option enabled for probabilistic taint. This takes in the parameters ```--taint_random```, which propagates specific taints with user-specified probablities. We use this as testing to avoid taint explosion for non-sensitive taint labels. We store the probability p that we *don't* propagate the taint value. 
 
 ```
---taint_random <num_bits> [default: 0]
+--taint_random=<num_bits> [default: 0]
 	Specifies the number of bits used to hold a probability p of propagation.
 	The default, 0, means that probabilistic taint propagation is disabled. 
 	Probabilities are stored as integers in <num_bits> most significant bits
 	of the taint input, as an integer. 
-		(p = taint >> (sizeof(taint_t)-<num_bits>)/(1 << <num_bits>))
+		(p = taint >> (sizeof(taint_t) - <num_bits>) / (1 << <num_bits>))
 	The taints will therefore only be the lower (sizeof(taint_t) - <num_bits>)
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
 ```
@@ -122,7 +119,7 @@ The upside of having taints passed in as extra variables to the signature is tha
 
 ## Contributing/Authors
 
-This taint tracking repository was made by [Raymond Lin](https://www.github.com/raylin1000), [Daniel Inge](https://www.github.com/daninge98), and [William Fu](https://www.github.com/wfus) for Harvard's CS263, System Security. If there are any issues, please submit an issue on Github or fork this repository!
+This taint tracking repository was made by [William Fu](https://www.github.com/wfus), [Daniel Inge](https://www.github.com/daninge98), and [Raymond Lin](https://www.github.com/raylin1000) for Harvard's CS263, System Security. If there are any issues, please submit an issue on Github or fork this repository!
 
    
 
