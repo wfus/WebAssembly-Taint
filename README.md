@@ -75,7 +75,7 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
 ```
 
-For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variable has had with certain non-sensitive information sources. For example
+For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variables have had with certain non-sensitive information sources. For example
 
 
 nefariouscall.js
@@ -116,7 +116,7 @@ var out = myfunction(50, 100, 200, 0x000000f0);
 var out = myfunction(1, 2, 3, 0x1, 0x2, 0x4, 0x8);
 ``` 
 
-The upside of having taints passed in as extra variables to the signature is that the default version of V8 throws away the extra parameters. Therefore, you can test/run your taint modified scripts in both this custom V8 as well as regular V8.  
+The upside of having taints passed in as extra variables to the signature is that the default version of V8 throws away the extra parameters without error. Therefore, you can test/run your taint modified scripts in both this custom V8 as well as regular V8.  
 
 
 
