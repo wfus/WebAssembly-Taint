@@ -33,7 +33,7 @@ const importObject = {env};
 createWebAssembly('helloworld.wasm', importObject).then(wa => {
 	const exports = wa.instance.exports;
 	console.log("Got the exports", exports);
-	exports._helloworld("boaz bara");
+	console.log(exports._helloworld("boaz bara"));
 }).catch(err => console.log('Error loading WASM', err));
 
 

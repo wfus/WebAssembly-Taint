@@ -151,4 +151,3 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	console.log(exports.test_F64NearestInt(10, 6681));
 }).catch(err => console.log('Error loading WASM', err));
 console.log("Reached end of file");
-
