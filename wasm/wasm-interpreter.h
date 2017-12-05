@@ -35,7 +35,6 @@ struct WasmContext;
 namespace wasm {
     
 inline static void print_bytes_of_object(WasmValue *wasm) {
-    std::cout << FLAG_taint_log << std::endl;
     TAINTLOG("[ ");
     switch(wasm->type()) {
         case kWasmI32:
