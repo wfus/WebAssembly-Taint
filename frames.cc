@@ -2004,8 +2004,15 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
       }
       else {
          // User made an error, taint overloaded wrong...
+	 // Uncomment below lines if you want to be strict about user input tbh 
+	 /*
          std::cout << "Taint overloaded incorrectly..." << std::endl;
-         taints.push_back(0); 
+	 taints.push_back(0); 
+         */
+         uint32_t val;
+         param->ToUint32(&val);
+         taint_t taint = static_cast<taint_t>(val);
+         taint.push_back(taint);
       }
     }
   }
@@ -2024,7 +2031,11 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
   return taints;
 }
 
-// WFUEDIT...
+/** 
+ * Prints the actual arguments of a function, including extra parameters
+ * at the end. Mainly used for debugging, check if parameter is a 
+ * V8 Heap object or SMI [Small Integer], 31 bit signed. 
+ */
 std::vector<Object*> ArgumentsAdaptorFrame::GetActualParameters() {
   
   bool debug = false;
