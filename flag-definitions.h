@@ -553,8 +553,11 @@ DEFINE_INT(taint_kill, 0,
            "Kill process if specified taint gets passed out of function "
            "(by default, don't kill on taint)")
 DEFINE_STRING(taint_log, nullptr,
-              "the file to which the taint log is written "
+              "The file to which the taint log is written "
               "written (by default, the log is not written anywhere)")
+DEFINE_BOOL(taint_full_log, false,
+            "The level of logging that we do "
+            "(by default, we only log when a tainted value is returned to JavaScript)")
 DEFINE_INT(taint_random, 0,
            "Setting this to a non-zero value makes taint tracking probabilistic."
            "The value is the number of high order bits of the taint dedicated to the probability "
