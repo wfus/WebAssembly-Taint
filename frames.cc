@@ -2005,14 +2005,16 @@ std::vector<taint_t> ArgumentsAdaptorFrame::GetStrippedTaints() {
       else {
          // User made an error, taint overloaded wrong...
 	 // Uncomment below lines if you want to be strict about user input tbh 
-	 /*
+	 // The reason we have to do this is because Smis only include signed 32bit integers - 
+         // will complain if users sends in 0xffffffff, which is a totally valid taint. 
+         /*
          std::cout << "Taint overloaded incorrectly..." << std::endl;
 	 taints.push_back(0); 
          */
          uint32_t val;
          param->ToUint32(&val);
          taint_t taint = static_cast<taint_t>(val);
-         taint.push_back(taint);
+         taints.push_back(taint);
       }
     }
   }
