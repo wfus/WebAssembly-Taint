@@ -1441,8 +1441,7 @@ class ThreadImpl {
     DCHECK_GT(frames_.size(), 0);
     WasmValue* sp_dest = stack_start_ + frames_.back().sp;
     frames_.pop_back();
-      
-    TAINTLOG("RESULT: ");
+    
 
     if (frames_.size() == current_activation().fp) {
       // A return from the last frame terminates the execution.
@@ -1450,10 +1449,11 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      print_bytes_of_object(sp_dest);
-      TAINTLOG("\nFinished executing function ");
-      TAINTLOG((*code)->function->func_index);
-      TAINTLOG("\n\n");
+      if (FLAG_taint_full_log || sp_dest->getTaint() != 0) {
+          TAINTLOG("RESULT: ");
+          print_bytes_of_object(sp_dest);
+          TAINTLOG("\nFinished executing function " << (*code)->function->func_index << "\n\n");
+      }
         
       if ((sp_dest->getTaint() & FLAG_taint_kill) != 0 ) {
           exit(1);
@@ -1471,11 +1471,11 @@ class ThreadImpl {
             (*code)->function->func_index, *pc);
       DoStackTransfer(sp_dest, arity);
       
-      print_bytes_of_object(sp_dest);
-      TAINTLOG("\nReturning to function ");
-      TAINTLOG((*code)->function->func_index);
-      TAINTLOG(std::endl);
-      
+      if (FLAG_taint_full_log) {
+          TAINTLOG("RESULT: ");
+          print_bytes_of_object(sp_dest);
+          TAINTLOG("\nReturning to function " << (*code)->function->func_index << std::endl);
+      }
       return true;
     }
   }
@@ -1484,9 +1484,9 @@ class ThreadImpl {
   // and the current activation was fully unwound.
   bool DoCall(Decoder* decoder, InterpreterCode* target, pc_t* pc,
               pc_t* limit) WARN_UNUSED_RESULT {
-    TAINTLOG("Calling function ");
-    TAINTLOG(target->function->func_index);
-    TAINTLOG(std::endl);
+    if (FLAG_taint_full_log) {
+        TAINTLOG("Calling function " << target->function->func_index << std::endl);
+    }
     frames_.back().pc = *pc;
     PushFrame(target);
     if (!DoStackCheck()) return false;
