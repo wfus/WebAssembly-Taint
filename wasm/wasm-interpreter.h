@@ -11,6 +11,10 @@
 #include <iostream>
 #include <fstream>
 
+
+// std::ofstream doesn't have permissions to write in chromium
+// since wasm-interpreter runs inside the chrome NaCl sandbox 
+// Use flag --no-sandbox in chromium to allow printing (unsafe)
 #define TAINTLOG(s)                                             \
 if (FLAG_wasm_taint && FLAG_taint_log != nullptr) {             \
     std::ofstream logger;                                       \
@@ -31,6 +35,7 @@ struct WasmContext;
 namespace wasm {
     
 inline static void print_bytes_of_object(WasmValue *wasm) {
+    std::cout << FLAG_taint_log << std::endl;
     TAINTLOG("[ ");
     switch(wasm->type()) {
         case kWasmI32:
