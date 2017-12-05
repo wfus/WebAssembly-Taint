@@ -1,0 +1,21 @@
+echo "CLEAN 10 ARGS"
+./../inputtest/x64.release/d8 --wasm_interpret_all ../inputtest/test10_d8.js
+time for i in {1..10};
+	do ./../inputtest/x64.release/d8 ../inputtest/test10_d8.js
+done 
+echo "CLEAN 100 ARGS"
+./../inputtest/x64.release/d8 --wasm_interpret_all ../inputtest/test100_d8.js
+time for i in {1..10};
+        do ./../inputtest/x64.release/d8 ../inputtest/test100_d8.js
+done
+echo "MODIFIED 10 ARGS"
+./../../../out.gn/x64.release/d8 --wasm_taint ../inputtest/test10_d8.js
+time for i in {1..10};
+	do ./../../../out.gn/x64.release/d8 --wasm_taint ../inputtest/test10_d8.js
+done
+echo "MODIFIED 100 ARGS"
+./../../../out.gn/x64.release/d8 --wasm_taint ../inputtest/test100_d8.js
+time for i in {1..10};
+	do ./../../../out.gn/x64.release/d8 --wasm_taint ../inputtest/test100_d8.js
+done
+
