@@ -76,7 +76,11 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 	The taints will therefore only be the lower (sizeof(taint_t) - <num_bits>)
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
 ```
-<div style="align:center"><img src ="images/probtaint.png" /></div>
+<p align="center">
+	<img src ="images/probtaint.png" />
+</p>
+
+
 For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variables have had with certain non-sensitive information sources. For example
 
 
