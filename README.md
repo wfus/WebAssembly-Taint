@@ -4,14 +4,14 @@
 
 This is a modification to the src files of the [V8 JavaScript Engine](https://www.github.com/v8/v8.git) that is used in Google Chrome, Chromium, NodeJS, etc. To prevent conflicts, this modification should be used on the the stable releases ```chromium/3270``` in the V8 repository and ```64.0.3270.2``` for chromium. 
 
-To build, first fetch V8 using Google's depot_tools and reset the version to ```chromium/3270```. Then, replace the '''src''' folder with this repository, and build V8. The commands for performing a build are included below.
+To build, first fetch V8 using Google's depot_tools and reset the version to ```chromium/3270```. Then, replace the ```src``` folder with this repository, and build V8. The commands for performing a build are included below.
 
 ```
 fetch v8
 cd v8
 git checkout chromium/3270
 rm -rf src/
-git clone https://www.github.com/wfus/WebAssembly-Taint src
+git clone https://www.github.com/wfus/WebAssembly-Taint src/
 tools/dev/v8gen.py x64.release
 ninja -C out.gn/x64.release -j72
 ```
@@ -28,6 +28,11 @@ For Chromium
 ```
 # Mac OSX
 Chromium.app/Contents/MacOS/Chromium --js-flags="--wasm_taint"
+
+# Chromium sandboxes it's V8 wasm interpreter inside a NaCl sandbox even 
+# when not running the compiled version. Therefore, to log use this at your
+# own risk, you can get petya green!!!
+Chromium.app/Contents/MacOS/Chromium --js-flags="--wasm_taint --taint_log=/my/logging/dir" --no-sandbox
 ```
 
 For V8
