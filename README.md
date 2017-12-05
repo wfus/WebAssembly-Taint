@@ -51,6 +51,14 @@ node --v8-options="--wasm_taint"
 	Output file for logging purposes. If no argument is given, does not log. 
 ```
 
+```
+--taint_full_log [default: false]
+	Fully logs all function calls including inputs and output WasmValues. For each
+	WasmValue, it logs [ Value | Taint ] to taint_log's specified directory.
+	Value will be printed normally, while taint is printed in hex. 
+```
+
+
 ### Taint Options
 Taint is currently implemented as a ```uint32_t```, or 32 bits that represent 32 unique taint tags. However, this can be easily changed by going into the ```src/frames.h``` and changing ```typedef uint32_t taint_t``` to ```typedef <YOUR_TYPE> taint_t```. 
 
@@ -84,7 +92,7 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 For sensitive taint labels, like TAINT_CREDIT_CARD, we could set the p=0, and for labels like TAINT_GAME_DATA or TAINT_NETWORK_MESSAGE we could use p=255/256. This allows us to see approximately how much contact several variables have had with certain non-sensitive information sources. For example
 
 
-nefariouscall.js
+```nefariouscall.js```
 ```
 var sekritkey = 13371337;
 var r00db0y35NetMsg = 100291239123;
@@ -99,7 +107,7 @@ var msg_prob = 250 << (32 - 8); // p=250/256, 6/256 chance of propagating
 therudeboys.sendKey(sekritkey, r00db0y35NetMsg, key_t+key_prob, msg_t+msg_prob); 
 ```
 
-bash
+```bash```
 ```
 ./d8 --wasm_taint --taint_random 8 nefariouscall.js 
 ```
