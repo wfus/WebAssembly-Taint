@@ -38,7 +38,7 @@
 namespace v8 {
 namespace internal {
 namespace wasm {
-    /*
+    
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&l);
@@ -48,8 +48,7 @@ namespace wasm {
         print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
-    */
-    /*
+    
     static void log_unop(WasmValue v, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&v);
@@ -57,7 +56,7 @@ namespace wasm {
         print_bytes_of_object(&res);
         TAINTLOG(std::endl);
     }
-    */
+
 #if DEBUG
 #define TRACE(...)                                        \
   do {                                                    \
@@ -1512,9 +1511,8 @@ class ThreadImpl {
 
   template <typename mtype>
   inline bool BoundsCheck(uint32_t mem_size, uint32_t offset, uint32_t index) {
-    return sizeof(mtype) /* + sizeof(taint_t)*/ <= mem_size &&
-           offset <= mem_size - sizeof(mtype) /* - sizeof(taint_t) */ &&
-           index <= mem_size - sizeof(mtype) /* - sizeof(taint_t) */ - offset;
+    return sizeof(mtype) <= mem_size && offset <= mem_size - sizeof(mtype) &&
+           index <= mem_size - sizeof(mtype) - offset;
   }
 
   template <typename ctype, typename mtype>
@@ -1522,23 +1520,21 @@ class ThreadImpl {
                    MachineRepresentation rep) {
     MemoryAccessOperand<Decoder::kNoValidate> operand(decoder, code->at(pc),
                                                       sizeof(ctype));
-    WasmValue index = Pop();
-    uint32_t index_val = index.to<uint32_t>();
+    uint32_t index = Pop().to<uint32_t>();
     
-    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index_val)) {
+    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index)) {
       DoTrap(kTrapMemOutOfBounds, pc);
       return false;
     }
-    byte* addr = wasm_context_->mem_start + operand.offset + index_val;
+    byte* addr = wasm_context_->mem_start + operand.offset + index;
     WasmValue result(converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
-    /* result.setTaint(index.getTaint() | ReadLittleEndianValue<taint_t>(addr + sizeof(mtype))); */
         
     Push(result);
     len = 1 + operand.length;
 
     if (FLAG_wasm_trace_memory) {
       tracing::TraceMemoryOperation(
-          tracing::kWasmInterpreted, false, rep, operand.offset + index_val,
+          tracing::kWasmInterpreted, false, rep, operand.offset + index,
           code->function->func_index, static_cast<int>(pc),
           wasm_context_->mem_start);
     }
@@ -1551,24 +1547,21 @@ class ThreadImpl {
                     MachineRepresentation rep) {
     MemoryAccessOperand<Decoder::kNoValidate> operand(decoder, code->at(pc),
                                                       sizeof(ctype));
-    WasmValue val = Pop();
+    ctype val = Pop().to<ctype>();
+    uint32_t index = Pop().to<uint32_t>();
     
-    WasmValue index = Pop();
-    uint32_t index_val = index.to<uint32_t>();
-    
-    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index_val)) {
+    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index)) {
       DoTrap(kTrapMemOutOfBounds, pc);
       return false;
     }
-    byte* addr = wasm_context_->mem_start + operand.offset + index_val;
-    WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val.to<ctype>()));
-    /* WriteLittleEndianValue<taint_t>(addr + sizeof(mtype), val.getTaint() | index.getTaint()); */
+    byte* addr = wasm_context_->mem_start + operand.offset + index;
+    WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val));
       
     len = 1 + operand.length;
 
     if (FLAG_wasm_trace_memory) {
       tracing::TraceMemoryOperation(
-          tracing::kWasmInterpreted, true, rep, operand.offset + index_val,
+          tracing::kWasmInterpreted, true, rep, operand.offset + index,
           code->function->func_index, static_cast<int>(pc),
           wasm_context_->mem_start);
     }
@@ -2164,6 +2157,9 @@ class ThreadImpl {
       res.setTaint(ltaint | rtaint | prob);                  \
     }                                                        \
     Push(res);                                               \
+    if (FLAG_taint_full_log) {                               \
+        log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
+    }                                                        \
     break;                                                   \
 }
               FOREACH_SIMPLE_BINOP(EXECUTE_SIMPLE_BINOP)
@@ -2197,6 +2193,9 @@ class ThreadImpl {
     }                                                       \
     res.setTaint(ltaint | rtaint | prob);                   \
     Push(res);                                              \
+    if (FLAG_taint_full_log) {                              \
+              log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
+    }                                                       \
     break;                                                  \
   }
           FOREACH_OTHER_BINOP(EXECUTE_OTHER_BINOP)
@@ -2222,6 +2221,9 @@ class ThreadImpl {
     }                                                       \
     res.setTaint(taint | prob);                             \
     Push(res);                                              \
+    if (FLAG_taint_full_log) {                              \
+    log_unop(val, res, STRING(ctype), STRING(name));        \
+    }                                                       \
     break;                                                  \
   }
           FOREACH_OTHER_UNOP(EXECUTE_OTHER_UNOP)
