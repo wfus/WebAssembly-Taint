@@ -445,7 +445,7 @@ class FrameArrayBuilder {
         //====================================================================
         // Handle a WASM interpreted frame.
         //====================================================================
-        printf("Appending a WASM Interpreted frame...");
+        //printf("Appending a WASM Interpreted frame...");
 	const auto& summary = summ.AsWasmInterpreted();
         Handle<WasmInstanceObject> instance = summary.wasm_instance();
         int flags = FrameArray::kIsWasmInterpretedFrame;

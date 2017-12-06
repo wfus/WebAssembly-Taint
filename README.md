@@ -29,15 +29,14 @@ For Chromium
 # Mac OSX
 Chromium.app/Contents/MacOS/Chromium --js-flags="--wasm_taint"
 
-# Chromium sandboxes it's V8 wasm interpreter inside a NaCl sandbox even 
-# when not running the compiled version. Therefore, to log use this at your
-# own risk, you can get petya green!!!
+# Chromium sandboxes its V8 wasm interpreter inside a NaCl sandbox even when
+# not running the compiled version. Therefore, to log use this at your own risk!!!
 Chromium.app/Contents/MacOS/Chromium --js-flags="--wasm_taint --taint_log=/my/logging/dir" --no-sandbox
 ```
 
 For V8
 ```
-out.gn/x64.debug/d8 --wasm_taint example.js
+out.gn/x64.release/d8 --wasm_taint example.js
 ```
 
 For NodeJS
@@ -48,7 +47,8 @@ node --v8-options="--wasm_taint"
 ### Logging
 ```
 --taint_log=<outdir> [default: no logging]
-	Output file for logging purposes. If no argument is given, does not log. 
+	Output file for logging purposes. Only logs when a wasm function returns a tainted
+	value to JavaScript. If no argument is given, does not log. 
 ```
 
 ```
@@ -85,7 +85,7 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
 ```
 <p align="center">
-	<img src ="images/probtaint.png" />
+	<img src ="images/taint_t.png" />
 </p>
 
 
@@ -130,7 +130,7 @@ var out = myfunction(1, 2, 3, 0x1, 0x2, 0x4, 0x8);
 
 The upside of having taints passed in as extra variables to the signature is that the default version of V8 throws away the extra parameters without error. Therefore, you can test/run your taint modified scripts in both this custom V8 as well as regular V8.  
 
-## Small note on most significant bit of Taint
+## Small note on most significant bit of taint
 
 Because of V8's internal structure (Smi are stored as signed ints, 31 bits of int and most significant bit for sign), taints with the full 32 bits set will be noticably slower. Therefore, it is advisable to use the lower 31 bits unless necessary. We have created our system such that the most significant bit is the most rarely used.  
 
