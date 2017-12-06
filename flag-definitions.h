@@ -547,6 +547,8 @@ DEFINE_BOOL(wasm_code_fuzzer_gen_test, false,
 DEFINE_BOOL(print_wasm_code, false, "Print WebAssembly code")
 DEFINE_BOOL(wasm_interpret_all, false,
             "Execute all wasm code in the wasm interpreter")
+
+// Flags for Taint Settings (Taint Tracking)
 DEFINE_BOOL(wasm_taint, false,
             "Runs interpreted wasm with taint tracking enabled. Does not use compiled wasm.")
 DEFINE_INT(taint_kill, 0,
@@ -562,17 +564,20 @@ DEFINE_INT(taint_random, 0,
            "Setting this to a non-zero value makes taint tracking probabilistic."
            "The value is the number of high order bits of the taint dedicated to the probability "
            "that the taint is not propagated.")
-DEFINE_BOOL(wasm_taint_debug, false,
-            "Traces through and prints out logging for wasm_taint structures.")
 DEFINE_BOOL(asm_wasm_lazy_compilation, false,
             "enable lazy compilation for asm-wasm modules")
 DEFINE_IMPLICATION(validate_asm, asm_wasm_lazy_compilation)
 DEFINE_BOOL(wasm_lazy_compilation, false,
             "enable lazy compilation for all wasm modules")
-// wasm_taint_debug basically means wasm_taint with verbose mode
-DEFINE_IMPLICATION(wasm_taint_debug, wasm_taint)
+
+// Any of these options require taint mode to be active
+DEFINE_IMPLICATION(taint_kill, wasm_taint);
+DEFINE_IMPLICATION(taint_random, wasm_taint);
+DEFINE_IMPLICATION(taint_full_log, wasm_taint);
+DEFINE_IMPLICATION(taint_log, wasm_taint);
+
 // wasm_taint only works with interpreted wasm. 
-DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all)
+DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all
 // wasm-interpret-all resets {asm-,}wasm-lazy-compilation.
 DEFINE_NEG_IMPLICATION(wasm_interpret_all, asm_wasm_lazy_compilation)
 DEFINE_NEG_IMPLICATION(wasm_interpret_all, wasm_lazy_compilation)
