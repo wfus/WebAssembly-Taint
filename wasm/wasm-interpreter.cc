@@ -1512,8 +1512,9 @@ class ThreadImpl {
 
   template <typename mtype>
   inline bool BoundsCheck(uint32_t mem_size, uint32_t offset, uint32_t index) {
-    return sizeof(mtype) <= mem_size && offset <= mem_size - sizeof(mtype) &&
-           index <= mem_size - sizeof(mtype) - offset;
+    return sizeof(mtype) + sizeof(taint_t) <= mem_size &&
+           offset <= mem_size - sizeof(mtype) - sizeof(taint_t) &&
+           index <= mem_size - sizeof(mtype) - sizeof(taint_t) - offset;
   }
 
   template <typename ctype, typename mtype>
