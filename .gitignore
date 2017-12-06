@@ -1,2 +1,5 @@
 **/.DS_STORE
 *.swp
+
+examples/tools/wasm2uint8
+examples/tools/wasm2uint8.dSYM
