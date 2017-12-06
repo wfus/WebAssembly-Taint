@@ -2146,10 +2146,10 @@ class ThreadImpl {
         taint_t rprob = rtaint >> PROBSHIFT;                 \
         ltaint = ltaint % (1 << PROBSHIFT);                  \
         rtaint = rtaint % (1 << PROBSHIFT);                  \
-        if (rand() % (1 << FLAG_taint_random) < lprob) {     \
+        if (lprob != 0 && rand() % (1 << FLAG_taint_random) < lprob) {  \
             ltaint = 0;                                      \
         }                                                    \
-        if (rand() % (1 << FLAG_taint_random) < rprob) {     \
+        if (rprob != 0 && rand() % (1 << FLAG_taint_random) < rprob) {  \
             rtaint = 0;                                      \
         }                                                    \
         prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
@@ -2180,10 +2180,10 @@ class ThreadImpl {
         taint_t rprob = rtaint >> PROBSHIFT;                \
         ltaint = ltaint % (1 << PROBSHIFT);                 \
         rtaint = rtaint % (1 << PROBSHIFT);                 \
-        if (rand() % (1 << FLAG_taint_random) < lprob) {    \
+        if (lprob != 0 && rand() % (1 << FLAG_taint_random) < lprob) {  \
             ltaint = 0;                                     \
         }                                                   \
-        if (rand() % (1 << FLAG_taint_random) < rprob) {    \
+        if (rprob != 0 && rand() % (1 << FLAG_taint_random) < rprob) {  \
             rtaint = 0;                                     \
         }                                                   \
         prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
@@ -2208,7 +2208,7 @@ class ThreadImpl {
     if (FLAG_taint_random != 0) {                           \
         prob = taint >> PROBSHIFT;                          \
         taint = taint % (1 << PROBSHIFT);                   \
-        if (rand() % (1 << FLAG_taint_random) < prob) {     \
+        if (prob != 0 && rand() % (1 << FLAG_taint_random) < prob) { \
             taint = 0;                                      \
         }                                                   \
         prob = prob << PROBSHIFT;                           \

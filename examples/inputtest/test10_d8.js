@@ -37,9 +37,9 @@ const bytes = new Uint8Array(
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	for (var i = 0; i < 1000000; i++){	
-		exports.mainint(651, 480, 621, 313, 276, 318, 446, 441, 536, 141, 564, 140, 813, 600, 594, 490, 363, 636, 670, 243, 269);
+		//exports.mainint(651, 480, 621, 313, 276, 318, 446, 441, 536, 141, 564, 140, 813, 600, 594, 490, 363, 636, 670, 243, 269);
 		//exports.mainfloat(438, 981, 546, 181, 994, 614, 982, 189, 616, 484, 245, 571, 904, 865, 395, 614, 209, 459, 625, 511, 101);
-		//exports.maindouble(392, 61, 884, 939, 995, 728, 690, 231, 569, 205, 924, 366, 287, 152, 835, 411, 771, 840, 236, 839, 743);
+		exports.maindouble(392, 61, 884, 939, 995, 728, 690, 231, 569, 205, 924, 366, 287, 152, 835, 411, 771, 840, 236, 839, 743);
 }
 }).catch(err => console.log('Error loading WASM', err));
 
