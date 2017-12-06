@@ -1512,9 +1512,9 @@ class ThreadImpl {
 
   template <typename mtype>
   inline bool BoundsCheck(uint32_t mem_size, uint32_t offset, uint32_t index) {
-    return sizeof(mtype) <= mem_size &&
-           offset <= mem_size - sizeof(mtype) &&
-           index <= mem_size - sizeof(mtype) - offset;
+    return sizeof(mtype) /* + sizeof(taint_t)*/ <= mem_size &&
+           offset <= mem_size - sizeof(mtype) /* - sizeof(taint_t) */ &&
+           index <= mem_size - sizeof(mtype) /* - sizeof(taint_t) */ - offset;
   }
 
   template <typename ctype, typename mtype>
@@ -1531,7 +1531,7 @@ class ThreadImpl {
     }
     byte* addr = wasm_context_->mem_start + operand.offset + index_val;
     WasmValue result(converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
-    result.setTaint(index.getTaint() | ReadLittleEndianValue<taint_t>(addr + sizeof(mtype)));
+    /* result.setTaint(index.getTaint() | ReadLittleEndianValue<taint_t>(addr + sizeof(mtype))); */
         
     Push(result);
     len = 1 + operand.length;
@@ -1562,7 +1562,7 @@ class ThreadImpl {
     }
     byte* addr = wasm_context_->mem_start + operand.offset + index_val;
     WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val.to<ctype>()));
-    WriteLittleEndianValue<taint_t>(addr + sizeof(mtype), val.getTaint() | index.getTaint());
+    /* WriteLittleEndianValue<taint_t>(addr + sizeof(mtype), val.getTaint() | index.getTaint()); */
       
     len = 1 + operand.length;
 
