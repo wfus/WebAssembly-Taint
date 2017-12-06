@@ -1521,21 +1521,23 @@ class ThreadImpl {
                    MachineRepresentation rep) {
     MemoryAccessOperand<Decoder::kNoValidate> operand(decoder, code->at(pc),
                                                       sizeof(ctype));
-    uint32_t index = Pop().to<uint32_t>();
-    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index)) {
+    WasmValue index = Pop();
+    uint32_t index_val = index.to<uint32_t>();
+    
+    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index_val)) {
       DoTrap(kTrapMemOutOfBounds, pc);
       return false;
     }
-    byte* addr = wasm_context_->mem_start + operand.offset + index;
-    WasmValue result(
-        converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
-
+    byte* addr = wasm_context_->mem_start + operand.offset + index_val;
+    WasmValue result(converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
+    result.setTaint(index.getTaint() | ReadLittleEndianValue<taint_t>(addr + sizeof(mtype)));
+        
     Push(result);
     len = 1 + operand.length;
 
     if (FLAG_wasm_trace_memory) {
       tracing::TraceMemoryOperation(
-          tracing::kWasmInterpreted, false, rep, operand.offset + index,
+          tracing::kWasmInterpreted, false, rep, operand.offset + index_val,
           code->function->func_index, static_cast<int>(pc),
           wasm_context_->mem_start);
     }
@@ -1548,20 +1550,24 @@ class ThreadImpl {
                     MachineRepresentation rep) {
     MemoryAccessOperand<Decoder::kNoValidate> operand(decoder, code->at(pc),
                                                       sizeof(ctype));
-    ctype val = Pop().to<ctype>();
-
-    uint32_t index = Pop().to<uint32_t>();
-    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index)) {
+    WasmValue val = Pop();
+    
+    WasmValue index = Pop();
+    uint32_t index_val = index.to<uint32_t>();
+    
+    if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index_val)) {
       DoTrap(kTrapMemOutOfBounds, pc);
       return false;
     }
-    byte* addr = wasm_context_->mem_start + operand.offset + index;
-    WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val));
+    byte* addr = wasm_context_->mem_start + operand.offset + index_val;
+    WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val.to<ctype>()));
+    WriteLittleEndianValue<taint_t>(addr + sizeof(mtype), val.getTaint() | index.getTaint());
+      
     len = 1 + operand.length;
 
     if (FLAG_wasm_trace_memory) {
       tracing::TraceMemoryOperation(
-          tracing::kWasmInterpreted, true, rep, operand.offset + index,
+          tracing::kWasmInterpreted, true, rep, operand.offset + index_val,
           code->function->func_index, static_cast<int>(pc),
           wasm_context_->mem_start);
     }
