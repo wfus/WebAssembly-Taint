@@ -36,6 +36,6 @@ const bytes = new Uint8Array(
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
     for (var i = 0; i < 10000; i++) {
-	    exports.hashn(100, 1, 0xce800001, 0xce800001);
+	    exports.hashn(100, 1, 0xd2f00001, 0xd2f00001);
     }
 }).catch(err => print('Error loading WASM', err));

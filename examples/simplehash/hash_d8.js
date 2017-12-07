@@ -50,3 +50,4 @@ WebAssembly.instantiate(bytes, importObject).then(wa => {
 	print("success");
 }).catch(err => print('Error loading WASM', err));
 
+
