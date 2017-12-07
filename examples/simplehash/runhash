@@ -1,0 +1,4 @@
+#!/bin/sh
+
+FLAGS="--taint_random=8 --taint_kill=1"
+../../../out.gn/x64.release/d8 $FLAGS hash_d8.js   

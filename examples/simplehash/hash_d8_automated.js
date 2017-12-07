@@ -43,10 +43,12 @@ const bytes = new Uint8Array(
 
 // console.log(bytes);
 
+print(arguments[0] + 1);
+
+
 /* Load in our wasm file and try to activate functions */
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
-	exports.hashn(100, 1, 0xde000001, 0xde000001);
-	print("success");
+	exports.hashn(100, 1, 0x{}000001, 0x{}000001);
 }).catch(err => print('Error loading WASM', err));
 

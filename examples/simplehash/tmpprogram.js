@@ -1,12 +1,4 @@
-/* Loads the WebAssembly from file if running on browser */
-/*
-async function createWebAssembly(path, importObject) {
-	const bytes = await window.fetch(path).then(x => x.arrayBuffer());
-	return WebAssembly.instantiate(bytes, importObject);
-}
-*/
 
-/* Configures the memory available for Web Aseembly */
 const memory = new WebAssembly.Memory({initial:256, maximum:256});
 const env = {
 	'abortStackOverflow': _ => {throw new Error('overflow');},
@@ -41,12 +33,7 @@ const bytes = new Uint8Array(
 	32,0,11]
 )
 
-// console.log(bytes);
-
-/* Load in our wasm file and try to activate functions */
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
-	exports.hashn(100, 1, 0xde000001, 0xde000001);
-	print("success");
+	exports.hashn(100, 1, 0xaa000001, 0xaa000001);
 }).catch(err => print('Error loading WASM', err));
-
