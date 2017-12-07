@@ -564,8 +564,12 @@ DEFINE_INT(taint_random, 0,
            "Setting this to a non-zero value makes taint tracking probabilistic."
            "The value is the number of high order bits of the taint dedicated to the probability "
            "that the taint is not propagated.")
+DEFINE_BOOL(taint_heap, false, 
+            "Taints the heap. Currently not implemented in a very efficient way. Use at"
+            "your own risk. Currently work in progress for a more efficient implementation.")
 DEFINE_BOOL(asm_wasm_lazy_compilation, false,
             "enable lazy compilation for asm-wasm modules")
+
 DEFINE_IMPLICATION(validate_asm, asm_wasm_lazy_compilation)
 DEFINE_BOOL(wasm_lazy_compilation, false,
             "enable lazy compilation for all wasm modules")
@@ -575,6 +579,7 @@ DEFINE_IMPLICATION(taint_kill, wasm_taint)
 DEFINE_IMPLICATION(taint_random, wasm_taint)
 DEFINE_IMPLICATION(taint_full_log, wasm_taint)
 DEFINE_IMPLICATION(taint_log, wasm_taint)
+DEFINE_IMPLICATION(taint_heap, wasm_taint)
 
 // wasm_taint only works with interpreted wasm. 
 DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all)

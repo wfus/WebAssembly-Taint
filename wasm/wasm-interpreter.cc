@@ -31,14 +31,19 @@
 #include <iostream>
 #include <fstream>
 #include <bitset>
+#include <map>
 
 #define STRING(s) #s
 #define PROBSHIFT (8 * sizeof(taint_t) - FLAG_taint_random)
+
+typedef std::unordered_map<uint8_t*, uint32_t> shadow_taint;
 
 namespace v8 {
 namespace internal {
 namespace wasm {
     
+    shadow_taint shadow_heap = shadow_taint();
+
     static void log_binop(WasmValue l, WasmValue r, WasmValue res, const char* wtype, const char* wop) {
         TAINTLOG("["<<wop<<" "<<wtype<<"]: ");
         print_bytes_of_object(&l);
@@ -1447,7 +1452,9 @@ class ThreadImpl {
       state_ = WasmInterpreter::FINISHED;
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
-      
+
+      // Return to JS from last frame, clear map. 
+      shadow_heap.clear();
       // Clear out the "prob" header of the taint to check if it is nonzero
       if (FLAG_taint_full_log || sp_dest->getTaint() % (1 << PROBSHIFT) != 0) {
           TAINTLOG("RESULT: ");
@@ -1529,6 +1536,11 @@ class ThreadImpl {
     }
     byte* addr = wasm_context_->mem_start + operand.offset + index;
     WasmValue result(converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
+    if (FLAG_wasm_taint && FLAG_taint_heap) {
+      if (shadow_heap.count(addr)) {
+        result.setTaint(shadow_heap[addr]);
+      }
+    }
         
     Push(result);
     len = 1 + operand.length;
@@ -1548,7 +1560,8 @@ class ThreadImpl {
                     MachineRepresentation rep) {
     MemoryAccessOperand<Decoder::kNoValidate> operand(decoder, code->at(pc),
                                                       sizeof(ctype));
-    ctype val = Pop().to<ctype>();
+    WasmValue ret = Pop();
+    ctype val = ret.to<ctype>();
     uint32_t index = Pop().to<uint32_t>();
     
     if (!BoundsCheck<mtype>(wasm_context_->mem_size, operand.offset, index)) {
@@ -1557,7 +1570,15 @@ class ThreadImpl {
     }
     byte* addr = wasm_context_->mem_start + operand.offset + index;
     WriteLittleEndianValue<mtype>(addr, converter<mtype, ctype>{}(val));
-      
+    
+    // Add taint into our "shadow heap" unfortunately it's a pretty bad version of one
+    // since it seems like wasm using our entire virtual heap (?) search google mailing list
+    if (FLAG_wasm_taint && FLAG_taint_heap) {
+      taint_t taint = ret.getTaint();
+      if (FLAG_taint_random) taint = taint % (1 << PROBSHIFT);
+      shadow_heap[addr] = taint;
+    }
+
     len = 1 + operand.length;
 
     if (FLAG_wasm_trace_memory) {
@@ -2132,30 +2153,32 @@ class ThreadImpl {
     auto result = lval.to<ctype>() op rval.to<ctype>();      \
     possible_nondeterminism_ |= has_nondeterminism(result);  \
     WasmValue res = WasmValue(result);                       \
-    if (STRING(op) == "*" ||                                 \
-        STRING(op) == "/" ||                                 \
-        STRING(op) == "-" ||                                 \
-        STRING(op) == "+" ||                                 \
-        STRING(op) == "^" ||                                 \
-        STRING(op) == "|" ||                                 \
-        STRING(op) == "&") {                                 \
-      taint_t ltaint = lval.getTaint();                      \
-      taint_t rtaint = rval.getTaint();                      \
-      taint_t prob = 0;                                      \
-      if (FLAG_taint_random != 0) {                          \
-        taint_t lprob = ltaint >> PROBSHIFT;                 \
-        taint_t rprob = rtaint >> PROBSHIFT;                 \
-        ltaint = ltaint % (1 << PROBSHIFT);                  \
-        rtaint = rtaint % (1 << PROBSHIFT);                  \
-        if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
-            ltaint = 0;                                      \
-        }                                                    \
-        if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
-            rtaint = 0;                                      \
-        }                                                    \
-        prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
-      }                                                      \
-      res.setTaint(ltaint | rtaint | prob);                  \
+    if (FLAG_wasm_taint) {                                     \
+      if (STRING(op) == "*" ||                                 \
+          STRING(op) == "/" ||                                 \
+          STRING(op) == "-" ||                                 \
+          STRING(op) == "+" ||                                 \
+          STRING(op) == "^" ||                                 \
+          STRING(op) == "|" ||                                 \
+          STRING(op) == "&") {                                 \
+        taint_t ltaint = lval.getTaint();                      \
+        taint_t rtaint = rval.getTaint();                      \
+        taint_t prob = 0;                                      \
+        if (FLAG_taint_random != 0) {                          \
+          taint_t lprob = ltaint >> PROBSHIFT;                 \
+          taint_t rprob = rtaint >> PROBSHIFT;                 \
+          ltaint = ltaint % (1 << PROBSHIFT);                  \
+          rtaint = rtaint % (1 << PROBSHIFT);                  \
+          if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
+              ltaint = 0;                                      \
+          }                                                    \
+          if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
+              rtaint = 0;                                      \
+          }                                                    \
+          prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
+        }                                                      \
+        res.setTaint(ltaint | rtaint | prob);                  \
+      }                                                        \
     }                                                        \
     Push(res);                                               \
     if (FLAG_taint_full_log) {                               \
@@ -2176,23 +2199,25 @@ class ThreadImpl {
     possible_nondeterminism_ |= has_nondeterminism(result); \
     if (trap != kTrapCount) return DoTrap(trap, pc);        \
     WasmValue res = WasmValue(result);                      \
-    taint_t ltaint = lval.getTaint();                       \
-    taint_t rtaint = rval.getTaint();                       \
-    taint_t prob = 0;                                       \
-    if (FLAG_taint_random != 0) {                           \
-        taint_t lprob = ltaint >> PROBSHIFT;                \
-        taint_t rprob = rtaint >> PROBSHIFT;                \
-        ltaint = ltaint % (1 << PROBSHIFT);                 \
-        rtaint = rtaint % (1 << PROBSHIFT);                 \
-        if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
-            ltaint = 0;                                     \
-        }                                                   \
-        if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
-            rtaint = 0;                                     \
-        }                                                   \
-        prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
+    if (FLAG_wasm_taint) {                                  \
+      taint_t ltaint = lval.getTaint();                       \
+      taint_t rtaint = rval.getTaint();                       \
+      taint_t prob = 0;                                       \
+      if (FLAG_taint_random != 0) {                           \
+          taint_t lprob = ltaint >> PROBSHIFT;                \
+          taint_t rprob = rtaint >> PROBSHIFT;                \
+          ltaint = ltaint % (1 << PROBSHIFT);                 \
+          rtaint = rtaint % (1 << PROBSHIFT);                 \
+          if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
+              ltaint = 0;                                     \
+          }                                                   \
+          if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
+              rtaint = 0;                                     \
+          }                                                   \
+          prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
+      }                                                       \
+      res.setTaint(ltaint | rtaint | prob);                   \
     }                                                       \
-    res.setTaint(ltaint | rtaint | prob);                   \
     Push(res);                                              \
     if (FLAG_taint_full_log) {                              \
               log_binop(lval, rval, res, STRING(ctype), STRING(name)); \
@@ -2212,18 +2237,20 @@ class ThreadImpl {
     WasmValue res = WasmValue(result);                      \
     taint_t taint = val.getTaint();                         \
     taint_t prob = 0;                                       \
-    if (FLAG_taint_random != 0) {                           \
-        prob = taint >> PROBSHIFT;                          \
-        taint = taint % (1 << PROBSHIFT);                   \
-        if (prob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= prob) {  \
-            taint = 0;                                      \
-        }                                                   \
-        prob = prob << PROBSHIFT;                           \
+    if (FLAG_wasm_taint) {                                  \
+      if (FLAG_taint_random != 0) {                           \
+          prob = taint >> PROBSHIFT;                          \
+          taint = taint % (1 << PROBSHIFT);                   \
+          if (prob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= prob) {  \
+              taint = 0;                                      \
+          }                                                   \
+          prob = prob << PROBSHIFT;                           \
+      }                                                       \
+      res.setTaint(taint | prob);                             \
     }                                                       \
-    res.setTaint(taint | prob);                             \
     Push(res);                                              \
     if (FLAG_taint_full_log) {                              \
-    log_unop(val, res, STRING(ctype), STRING(name));        \
+      log_unop(val, res, STRING(ctype), STRING(name));      \
     }                                                       \
     break;                                                  \
   }

@@ -80,7 +80,7 @@ We have a prototype option enabled for probabilistic taint. This takes in the pa
 	The default, 0, means that probabilistic taint propagation is disabled. 
 	Probabilities are stored as integers in <num_bits> most significant bits
 	of the taint input, as an integer. 
-		(p = taint >> (sizeof(taint_t) - <num_bits>) / (1 << <num_bits>))
+		(p = taint >> (sizeof(taint_t) - <num_bits>) / (1 << <num_bits>) - 1))
 	The taints will therefore only be the lower (sizeof(taint_t) - <num_bits>)
 	bits, decreasing the total taint resolution. Taints will be passed in normally.  
 ```
