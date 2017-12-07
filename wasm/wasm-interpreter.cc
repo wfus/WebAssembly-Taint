@@ -36,7 +36,7 @@
 #define STRING(s) #s
 #define PROBSHIFT (8 * sizeof(taint_t) - FLAG_taint_random)
 
-typedef std::map<uint8_t*, uint32_t> shadow_taint;
+typedef std::unordered_map<uint8_t*, uint32_t> shadow_taint;
 
 namespace v8 {
 namespace internal {
