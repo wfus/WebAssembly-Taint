@@ -38,48 +38,48 @@ const bytes = new Uint8Array(
 
 WebAssembly.instantiate(bytes, importObject).then(wa => {{
 	const exports = wa.instance.exports;
-	exports.hashn(100, 1, 0x{}000001, 0x{}000001);
+    for (var i = 0; i < {}; i++) {{
+	    exports.hashn(100, 1, 0x{}00001, 0x{}00001);
+    }}
 }}).catch(err => print(\'Error loading WASM\', err));
 """
 
 tmpfilename = "tmpprogram.js"
 d8_command = "/Users/wfu/webasm/v8fresh/v8/out.gn/x64.release/d8"
 d8_flags = "--wasm_taint --taint_random=8 --taint_log=results.log"
-run_command = "{} {} {}".format(d8_command, d8_flags, tmpfilename)
+run_command = "{} {} {} >> hi.log".format(d8_command, d8_flags, tmpfilename)
 
 def file_len(fname):
     return sum(1 for line in open(fname))
 
 
 def run_test_for_prob(program, probability_str, num_tries=1000):
-    
-    os.system("touch results.log")
+    os.system('touch results.log')
     text_file = open(tmpfilename, "w")
-    text_file.write(program.format(probability_str, probability_str))
+    text_file.write(program.format("{}".format(num_tries), probability_str, probability_str))
     text_file.close()
     
-    for i in range(num_tries):
-        os.system(run_command)
+    os.system(run_command)
     
     num_lines = file_len('results.log')
     os.system('rm results.log')
-    return num_lines
+
+    # Divide by 3 because log output for taint is 3 lines long
+    return (num_lines // 3)
 
 
 
 if __name__ == "__main__":
-    print(run_test_for_prob(program_string, "aa"))
-    """
     hexarr = ['0','1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']
     results = []
     for a in hexarr:
         for b in hexarr:
-            curr = a + b
-            res = run_test_for_prob(program_string, curr, num_tries=1000)
-            print("{}: {}".format(curr, res))
-            results.append(res)
+            for c in hexarr:
+                curr = a + b + c
+                res = run_test_for_prob(program_string, curr, num_tries=10000)
+                print("{}: {}".format(curr, res))
+                results.append(res)
     print(results)
-    """
     
 
 

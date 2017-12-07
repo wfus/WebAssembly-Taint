@@ -1448,7 +1448,8 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      if (FLAG_taint_full_log || sp_dest->getTaint() != 0) {
+      // Clear out the "prob" header of the taint to check if it is nonzero
+      if (FLAG_taint_full_log || sp_dest->getTaint() % (1 << PROBSHIFT) != 0) {
           TAINTLOG("RESULT: ");
           print_bytes_of_object(sp_dest);
           TAINTLOG("\nFinished executing function " << (*code)->function->func_index << "\n\n");
