@@ -514,6 +514,7 @@ Handle<WasmInstanceObject> WasmInstanceObject::New(
   Handle<WasmInstanceObject> instance(
       reinterpret_cast<WasmInstanceObject*>(*instance_object), isolate);
 
+  // Interpreted Wasm also reaches "WasmInstanceObject::New"
   auto wasm_context = Managed<WasmContext>::Allocate(isolate);
   wasm_context->get()->mem_start = nullptr;
   wasm_context->get()->mem_size = 0;

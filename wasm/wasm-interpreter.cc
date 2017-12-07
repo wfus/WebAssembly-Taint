@@ -1536,7 +1536,7 @@ class ThreadImpl {
     }
     byte* addr = wasm_context_->mem_start + operand.offset + index;
     WasmValue result(converter<ctype, mtype>{}(ReadLittleEndianValue<mtype>(addr)));
-    if (FLAG_wasm_taint) {
+    if (FLAG_wasm_taint && FLAG_taint_heap) {
       if (shadow_heap.count(addr)) {
         result.setTaint(shadow_heap[addr]);
       }
@@ -1573,7 +1573,7 @@ class ThreadImpl {
     
     // Add taint into our "shadow heap" unfortunately it's a pretty bad version of one
     // since it seems like wasm using our entire virtual heap (?) search google mailing list
-    if (FLAG_wasm_taint) {
+    if (FLAG_wasm_taint && FLAG_taint_heap) {
       taint_t taint = ret.getTaint();
       if (FLAG_taint_random) taint = taint % (1 << PROBSHIFT);
       shadow_heap[addr] = taint;
