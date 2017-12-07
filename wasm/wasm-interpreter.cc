@@ -1448,7 +1448,8 @@ class ThreadImpl {
       DoStackTransfer(sp_dest, arity);
       TRACE("  => finish\n");
       
-      if (FLAG_taint_full_log || sp_dest->getTaint() != 0) {
+      // Clear out the "prob" header of the taint to check if it is nonzero
+      if (FLAG_taint_full_log || sp_dest->getTaint() % (1 << PROBSHIFT) != 0) {
           TAINTLOG("RESULT: ");
           print_bytes_of_object(sp_dest);
           TAINTLOG("\nFinished executing function " << (*code)->function->func_index << "\n\n");
@@ -2146,13 +2147,13 @@ class ThreadImpl {
         taint_t rprob = rtaint >> PROBSHIFT;                 \
         ltaint = ltaint % (1 << PROBSHIFT);                  \
         rtaint = rtaint % (1 << PROBSHIFT);                  \
-        if (lprob != 0 && rand() % (1 << FLAG_taint_random) < lprob) {  \
+        if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
             ltaint = 0;                                      \
         }                                                    \
-        if (rprob != 0 && rand() % (1 << FLAG_taint_random) < rprob) {  \
+        if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
             rtaint = 0;                                      \
         }                                                    \
-        prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
+        prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
       }                                                      \
       res.setTaint(ltaint | rtaint | prob);                  \
     }                                                        \
@@ -2183,13 +2184,13 @@ class ThreadImpl {
         taint_t rprob = rtaint >> PROBSHIFT;                \
         ltaint = ltaint % (1 << PROBSHIFT);                 \
         rtaint = rtaint % (1 << PROBSHIFT);                 \
-        if (lprob != 0 && rand() % (1 << FLAG_taint_random) < lprob) {  \
+        if (lprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= lprob) {  \
             ltaint = 0;                                     \
         }                                                   \
-        if (rprob != 0 && rand() % (1 << FLAG_taint_random) < rprob) {  \
+        if (rprob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= rprob) {  \
             rtaint = 0;                                     \
         }                                                   \
-        prob = ((lprob < rprob) ? lprob : rprob) << PROBSHIFT; \
+        prob = ((lprob > rprob) ? lprob : rprob) << PROBSHIFT; \
     }                                                       \
     res.setTaint(ltaint | rtaint | prob);                   \
     Push(res);                                              \
@@ -2214,7 +2215,7 @@ class ThreadImpl {
     if (FLAG_taint_random != 0) {                           \
         prob = taint >> PROBSHIFT;                          \
         taint = taint % (1 << PROBSHIFT);                   \
-        if (prob != 0 && rand() % (1 << FLAG_taint_random) < prob) { \
+        if (prob != (1 << FLAG_taint_random) - 1 && rand() % (1 << FLAG_taint_random) >= prob) {  \
             taint = 0;                                      \
         }                                                   \
         prob = prob << PROBSHIFT;                           \
