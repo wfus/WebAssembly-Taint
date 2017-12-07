@@ -571,13 +571,13 @@ DEFINE_BOOL(wasm_lazy_compilation, false,
             "enable lazy compilation for all wasm modules")
 
 // Any of these options require taint mode to be active
-DEFINE_IMPLICATION(taint_kill, wasm_taint);
-DEFINE_IMPLICATION(taint_random, wasm_taint);
-DEFINE_IMPLICATION(taint_full_log, wasm_taint);
-DEFINE_IMPLICATION(taint_log, wasm_taint);
+DEFINE_IMPLICATION(taint_kill, wasm_taint)
+DEFINE_IMPLICATION(taint_random, wasm_taint)
+DEFINE_IMPLICATION(taint_full_log, wasm_taint)
+DEFINE_IMPLICATION(taint_log, wasm_taint)
 
 // wasm_taint only works with interpreted wasm. 
-DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all
+DEFINE_IMPLICATION(wasm_taint, wasm_interpret_all)
 // wasm-interpret-all resets {asm-,}wasm-lazy-compilation.
 DEFINE_NEG_IMPLICATION(wasm_interpret_all, asm_wasm_lazy_compilation)
 DEFINE_NEG_IMPLICATION(wasm_interpret_all, wasm_lazy_compilation)
