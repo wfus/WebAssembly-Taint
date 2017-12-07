@@ -71,7 +71,14 @@ If a WasmValue with any taint tag set returns to the JavaScript context, the Jav
 	kills if (r & <input>) is non-zero). Default option does not ever kill.
 ```
 
-### Taint Explosion and Probabilistic Taint
+We are currently testing with using an ```std::unordered_map``` to store taint on the heap, which is currently not optimized. Therefore, the current heap tracking taint solution is an optional flag. 
+```
+--taint_heap [default: false]
+	Enables tracking taint on the heap. Currently uses an unordered map that gets 
+	cleared when the wasm context is deallocated. 
+```
+
+### Taint Lifetimes and Probabilistic Taint
 We have a prototype option enabled for probabilistic taint. This takes in the parameters ```--taint_random```, which propagates specific taints with user-specified probablities. We use this as testing to avoid taint explosion for non-sensitive taint labels. We store the probability p that we propagate the taint value. 
 
 ```
