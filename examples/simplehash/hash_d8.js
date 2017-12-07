@@ -43,10 +43,11 @@ const bytes = new Uint8Array(
 WebAssembly.instantiate(bytes, importObject).then(wa => {
 	const exports = wa.instance.exports;
 	var num_prob_bits = 8;
-	var prob = 1;
+	var prob = 255;
 	var taint = 1;
-	var totalTaint = 1 << (32 - num_prob_bits);
+	var totalTaint = taint + (prob << (32 - num_prob_bits));
 	print(exports.testhash(100, totalTaint));
 	print("Done!");
 }).catch(err => print('Error loading WASM', err));
+
 
