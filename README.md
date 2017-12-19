@@ -1,6 +1,6 @@
 # TaintAssembly: Taint-Based Information FlowControl Tracking for WebAssembly
 
-[The original paper associated with this project can be found here](TaintAssembly: Taint-Based Information Flow Control Tracking for WebAssembly.pdf)
+[The original paper associated with this project can be found here](TaintAssembly.pdf)
 ## Installation
 
 This is a modification to the src files of the [V8 JavaScript Engine](https://www.github.com/v8/v8.git) that is used in Google Chrome, Chromium, NodeJS, etc. To prevent conflicts, this modification should be used on the the stable releases ```chromium/3270``` in the V8 repository and ```64.0.3270.2``` for chromium. 
